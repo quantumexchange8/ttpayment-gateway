@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --primary-50: #F2F0FF;
+        --primary-100: #E8E4FF;
+        --primary-200: #D4CDFF;
+        --primary-300: #B5A6FF;
+        --primary-400: #9173FF;
+        --primary-500: #713BFF;
+        --primary-600: #6214FF;
+        --primary-700: #5200FF;
+        --primary-800: #4501D6;
+        --primary-900: #3A03AF;
+        --primary-950: #210077;
+    }
+}
