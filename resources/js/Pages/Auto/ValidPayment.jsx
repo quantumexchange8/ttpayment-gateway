@@ -7,13 +7,20 @@ import React, { useState, useEffect } from "react";
 import { QRCode } from 'react-qrcode-logo';
 // import TronComponent from "@/Components/TronComponent";
 
-export default function Payment({ merchant }) {
+export default function Payment({ merchant, transaction }) {
     const [currentWalletIndex, setCurrentWalletIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [timeRemaining, setTimeRemaining] = useState(merchant.refresh_time);
-    const [txid, setTxid] = useState('');
+    const [txid, setTxid] = useState();
     const [lastTimestamp, setLastTimestamp] = useState(0);
     const [blockTimestamp, setBlockTimestamp] = useState(0);
+    const [transDetails, setLatestTransaction] = useState({});
+
+    const { data, setData, post, processing, errors, reset } = useForm({
+        txid: '', // Initial form state
+        latestTransaction: {},
+        transaction: transaction,
+    });
 
     useEffect(() => {
         const refreshInterval = merchant.refresh_time * 1000; // Convert to milliseconds
@@ -38,10 +45,6 @@ export default function Payment({ merchant }) {
 
     const currentWallet = merchant.merchant_wallet_address[currentWalletIndex];
 
-    const { data, setData, post, processing, errors, reset } = useForm({
-        txid: '', // Initial form state
-    });
-
     useEffect(() => {
         const fetchBlock = async () => {
             try {
@@ -64,40 +67,33 @@ export default function Payment({ merchant }) {
                 const url = `https://nile.trongrid.io/v1/accounts/${currentWallet.wallet_address.token_address}/transactions/trc20?contract_address=TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj&order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
                 const response = await fetch(url);
                 const result = await response.json();
-                // console.log(result)
-                if ((result.data != null) && (result.data.length == 1)) {
-                    
+                console.log(result);
+                if ((result.data != null) && (result.data.length === 1)) {
                     const latestTransaction = result.data[0];
                     setTxid(latestTransaction.transaction_id);
-                    setData('txid', latestTransaction);
-                    // console.log(latestTransaction)
-                    // post('/updateTransaction', {
-                    //     datas: { transactions: latestTransaction },
-                    //     preserveScroll:true,
-                    //     onSuccess: () => {
-                    //         window.location.href = route('merchant.merchant-listing')
-                    //     }
-                    // });
-                    const postData = {
-                        // Adjust this payload according to your backend's expected format
-                        transactionId: latestTransaction.transaction_id,
-                        amount: latestTransaction.amount, // Example fields
-                        // Add more fields as necessary
-                    };
+                    setLatestTransaction(latestTransaction);
 
-                    const response = await post('/updateTransaction', postData);
-                    console.log('Response from backend:', response);
+                    setData('txid', latestTransaction.transaction_id);
+                    setData('latestTransaction', latestTransaction);
+
+                    if (data.latestTransaction.transaction_id) {
+                        post('/updateTransaction', {
+                            preserveScroll: true,
+                            onSuccess: () => {
+                                window.location.href = route('returnTransaction');
+                            }
+                        });
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching transactions:', error);
             }
         };
 
-        const pollingInterval = setInterval(fetchTransactions, 5000); // Poll every 15 seconds
+        const pollingInterval = setInterval(fetchTransactions, 4000); // Poll every 5 seconds
 
         return () => clearInterval(pollingInterval);
-    }, [currentWallet, blockTimestamp]);
-    
+    }, [currentWallet, blockTimestamp, transDetails]);
 
     return (
         <div className="w-full flex flex-col items-center justify-center gap-5 min-h-screen">

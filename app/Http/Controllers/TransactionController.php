@@ -22,7 +22,7 @@ class TransactionController extends Controller
 
     public function payment(Request $request)
     {
-        $amount = $request->query('amount');
+        $amount = $request->query('amount') / 1000000;
         $transactionNo = $request->query('orderNumber'); // TXN00000001 or no need
         $merchantId = $request->query('merchantId'); // MID000001
         $merchantClientId = $request->query('userId'); // Merchant client user id
@@ -41,11 +41,10 @@ class TransactionController extends Controller
                 'merchant_id' => $merchantId,
                 'client_id' => $merchantClientId,
                 'transaction_type' => 'deposit',
-                'payment_method' => $depositType == 1 ? 'auto' : 'manual',
+                'payment_method' => $depositType === 1 ? 'auto' : 'manual',
                 'status' => 'pending',
                 'amount' => $amount,
                 'transaction_number' => $transactionNo,
-
             ]);
 
             // if (!$request->session()->has('payment_expiration_time')) {
@@ -101,6 +100,7 @@ class TransactionController extends Controller
     
                     return Inertia::render('Auto/ValidPayment', [
                         'merchant' => $merchant,
+                        // 'transaction' => $transaction->id,
                     ]);
     
                 }
@@ -121,14 +121,25 @@ class TransactionController extends Controller
 
     public function updateClientTransaction(Request $request)
     {
-        
+        // dd($request->all());
         $datas = $request->all();
         
         $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
+        $transaction = Transaction::find($request->transaction);
+
+        $transactionData = $request->latestTransaction;
+
         
-        $transactionData = $request->input('datas.transactions');
+        $amount = $transactionData['value'] / 1000000 ;
+
+        $transaction->update([
+            'txID' => $transactionData['transaction_id'],
+            'from_wallet' => $transactionData['from'],
+            'to_wallet' => $transactionData['to'],
+            'amount' => $amount,
+            'status' => 'Success'
+        ]);
         
-        dd($datas);
         // $transaction = Transaction::create([
         //     'merchant_id' => $request->merchantId,
         //     'client_id' => $request->userId,
