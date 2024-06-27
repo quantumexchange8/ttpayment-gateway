@@ -7,28 +7,18 @@ export default function ReturnPayment({ datas, total_amount }) {
     
     const [isLoading, setIsLoading] = useState(false);
 
-    // const { data, setData, post, processing, errors, reset } = useForm({
-    //     amount: datas.amount,
-    //     merchantId: datas.merchantId,
-    //     merchantClientId: datas.merchantClientId,
-    //     orderNumber: datas.orderNumber,
-    //     receipt: datas.receipt ? datas.receipt : null,
-    //     to_wallet: datas.to_wallet,
-    //     txid: datas.txid,
-    //     vCode: datas.vCode,
-    //     total_amount: total_amount,
-    // })
+    const { data, setData, post, processing, errors, reset } = useForm({})
 
-    // const submit = (e) => {
-    //     e.preventDefault();
-    //     setIsLoading(true);
-    //     post('/returnUrl', {
-    //         preserveScroll: true,
-    //         onSuccess: () => {
-    //             setIsLoading(false);
-    //         }
-    //     })
-    // }
+    const submit = (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        post('/returnUrl', {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsLoading(false);
+            }
+        })
+    }
 
     return (
         <div className="w-full flex flex-col items-center justify-center gap-5 min-h-screen">
@@ -44,7 +34,7 @@ export default function ReturnPayment({ datas, total_amount }) {
                         </div>
                     </div>
                 </div>
-                <form >
+                <form onSubmit={submit} >
                     <Button type="submit" size="sm" variant="success" className="w-full flex justify-center">
                         <span className="text-sm font-semibold">
                             Return

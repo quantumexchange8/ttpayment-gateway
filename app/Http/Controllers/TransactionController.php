@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
@@ -26,7 +27,6 @@ class TransactionController extends Controller
         $transactionNo = $request->query('orderNumber'); // TXN00000001 or no need
         $merchantId = $request->query('merchantId'); // MID000001
         $merchantClientId = $request->query('userId'); // Merchant client user id
-        $depositType = $request->query('depositType'); //0 ? 1
 
         if (empty($request->all())) {
            
@@ -37,52 +37,65 @@ class TransactionController extends Controller
             $validTime = 15; //minutes
             $now = Carbon::now();
 
-            $transaction = Transaction::create([
-                'merchant_id' => $merchantId,
-                'client_id' => $merchantClientId,
-                'transaction_type' => 'deposit',
-                'payment_method' => $depositType === 1 ? 'auto' : 'manual',
-                'status' => 'pending',
-                'amount' => $amount,
-                'transaction_number' => $transactionNo,
-            ]);
-
-            // if (!$request->session()->has('payment_expiration_time')) {
-            //     // Calculate the expiration time as now + validTime minutes
-            //     $expirationTime = $now->copy()->addMinutes($validTime);
+            if (!$request->session()->has('payment_expiration_time')) {
+                // Calculate the expiration time as now + validTime minutes
+                $expirationTime = $now->copy()->addMinutes($validTime);
         
-            //     // Store the expiration time in the session
-            //     $request->session()->put('payment_expiration_time', $expirationTime);
-            // } else {
-            //     // Retrieve the expiration time from the session
-            //     $expirationTime = Carbon::parse($request->session()->get('payment_expiration_time'));
-            // }
+                // Store the expiration time in the session
+                $request->session()->put('payment_expiration_time', $expirationTime);
+            } else {
+                // Retrieve the expiration time from the session
+                $expirationTime = Carbon::parse($request->session()->get('payment_expiration_time'));
+            }
 
-            // if ($now >= $expirationTime) {
-            //     return Inertia::render('Timeout');
-            // } else {
+            if ($now >= $expirationTime) {
+                return Inertia::render('Timeout');
+            } else {
 
-            //     $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
-            //     $merchantClientId = $request->userId;
+                $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
+                $merchantClientId = $request->userId;
     
-            //     if($merchant->deposit_type == 0 ) {
+                if($merchant->deposit_type == 0 ) {
 
-            //         return Inertia::render('Manual/ValidPayment', [
-            //             'merchant' => $merchant,
-            //             'merchantClientId' => $merchantClientId, //userid
-            //             'vCode' => $request->vCode, //vCode
-            //             'orderNumber' => $request->orderNumber, //orderNumber
-            //             'expirationTime' => $expirationTime
-            //         ]);
-            //     } else if ($merchant->deposit_type == 1) {
-    
-            //         return Inertia::render('Auto/ValidPayment', [
-            //             'merchant' => $merchant,
-            //         ]);
-    
-            //     }
+                    $transaction = Transaction::create([
+                        'merchant_id' => $merchantId,
+                        'client_id' => $merchantClientId,
+                        'transaction_type' => 'deposit',
+                        'payment_method' => 'manual',
+                        'status' => 'pending',
+                        'amount' => $amount,
+                        'transaction_number' => $transactionNo,
+                    ]);
 
-            // }
+                    return Inertia::render('Manual/ValidPayment', [
+                        'merchant' => $merchant,
+                        'merchantClientId' => $merchantClientId, //userid
+                        'vCode' => $request->vCode, //vCode
+                        'orderNumber' => $request->orderNumber, //orderNumber
+                        'expirationTime' => $expirationTime,
+                        'transaction' => $transaction,
+                    ]);
+                } else if ($merchant->deposit_type == 1) {
+
+                    $transaction = Transaction::create([
+                        'merchant_id' => $merchantId,
+                        'client_id' => $merchantClientId,
+                        'transaction_type' => 'deposit',
+                        'payment_method' => 'auto',
+                        'status' => 'pending',
+                        'amount' => $amount,
+                        'transaction_number' => $transactionNo,
+                    ]);
+    
+                    return Inertia::render('Auto/ValidPayment', [
+                        'merchant' => $merchant,
+                        'amount' => $amount,
+                        'expirationTime' => $expirationTime,
+                        'transaction' => $transaction,
+                    ]);
+                }
+
+            }
 
             $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
                 $merchantClientId = $request->userId;
@@ -108,63 +121,43 @@ class TransactionController extends Controller
         
     }
 
-    // public function deposit(Request $request)
-    // {
-    //     dd($request->all());
-
-    //     $transaction = Transaction::create([
-    //         'merchant_id' => $request->
-    //     ]);
-
-    //     return redirect()->back();
-    // }
-
     public function updateClientTransaction(Request $request)
     {
         // dd($request->all());
         $datas = $request->all();
-        
+       
         $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
+       
+        $transactionData = $request->latestTransaction;
         $transaction = Transaction::find($request->transaction);
 
-        $transactionData = $request->latestTransaction;
-
-        
         $amount = $transactionData['value'] / 1000000 ;
-
-        $transaction->update([
-            'txID' => $transactionData['transaction_id'],
-            'from_wallet' => $transactionData['from'],
-            'to_wallet' => $transactionData['to'],
-            'amount' => $amount,
-            'status' => 'Success'
-        ]);
         
-        // $transaction = Transaction::create([
-        //     'merchant_id' => $request->merchantId,
-        //     'client_id' => $request->userId,
-        //     'transaction_type' => 'deposit',
-        //     'to_wallet' => $request->to_wallet,
-        //     'txID' => $request->txid,
-        //     'amount' => $request->amount,
-        //     'payment_method' => $merchant->deposit_type == 1 ? 'Auto' : 'Manual',
-        //     'status' => 'pending',
-        //     'fee' => 0.00,
-        //     'total_amount' => 0.00,
-        // ]);
+        if ($transaction->amount != $amount) {
+            $transaction->update([
+                'txID' => $transactionData['transaction_id'],
+                'block_time' => $transactionData['block_timestamp'],
+                'from_wallet' => $transactionData['from'],
+                'to_wallet' => $transactionData['to'],
+                'txn_amount' => $amount,
+                'status' => 'pending'
+            ]);
+        } else {
+            $transaction->update([
+                'txID' => $transactionData['transaction_id'],
+                'block_time' => $transactionData['block_timestamp'],
+                'from_wallet' => $transactionData['from'],
+                'to_wallet' => $transactionData['to'],
+                'txn_amount' => $amount,
+                'status' => 'Success'
+            ]);
+        }
 
-        // return Inertia::render('Manual/ReturnPayment', [
-        //     'datas' => $datas,
-        //     'total_amount' => $total_amount,
-        // ]);
         return redirect(route('returnTransaction'));
     }
 
     public function returnTransaction(Request $request)
     {
-        // dd($request->all());
-        // $status = $request->query('status');
-        // $transactionId = $request->query('transaction_id');
 
         return Inertia::render('Manual/ReturnPayment');
     }
@@ -200,8 +193,10 @@ class TransactionController extends Controller
             'total_amount' => $request->total_amount,
         ];
 
-        $url = $selectedPayout['paymentUrl'] . 'testing_payment/' . 'depositReturn';
-        $redirectUrl = $url . "?" . http_build_query($params);
+        $request->session()->flush();
+
+        $url = $selectedPayout['paymentUrl'] . 'dashboard';
+        $redirectUrl = $url;
 
         return Inertia::location($redirectUrl);
     }
@@ -214,7 +209,6 @@ class TransactionController extends Controller
 
     public function returnSession(Request $request)
     {
-        dd($request->all());
         $request->session()->flush();
 
         $payoutSetting = config('payment-gateway');

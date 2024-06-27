@@ -24,5 +24,7 @@ class Transaction extends Model
         'status',
         'description',
         'handle_by',
+        'block_time',
+        'txn_amount',
     ];
 }
