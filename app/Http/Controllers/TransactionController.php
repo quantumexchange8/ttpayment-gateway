@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Merchant;
 use App\Models\Token;
 use App\Models\Transaction;
+use App\Notifications\TransactionNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
@@ -126,11 +128,11 @@ class TransactionController extends Controller
         // dd($request->all());
         $datas = $request->all();
        
-        $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
+        $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress', 'merchantEmail'])->first();
        
         $transactionData = $request->latestTransaction;
         $transaction = Transaction::find($request->transaction);
-
+        $nowDateTime = Carbon::now();
         $amount = $transactionData['value'] / 1000000 ;
         
         if ($transaction->amount != $amount) {
@@ -140,8 +142,10 @@ class TransactionController extends Controller
                 'from_wallet' => $transactionData['from'],
                 'to_wallet' => $transactionData['to'],
                 'txn_amount' => $amount,
-                'status' => 'pending'
+                'status' => 'pending',
+                'transaction_date' => $nowDateTime
             ]);
+
         } else {
             $transaction->update([
                 'txID' => $transactionData['transaction_id'],
@@ -149,11 +153,21 @@ class TransactionController extends Controller
                 'from_wallet' => $transactionData['from'],
                 'to_wallet' => $transactionData['to'],
                 'txn_amount' => $amount,
-                'status' => 'Success'
+                'status' => 'success',
+                'transaction_date' => $nowDateTime
             ]);
+
         }
 
-        return redirect(route('returnTransaction'));
+        // Log::debug($merchant);
+        // Log::debug($merchant->merchantEmail);
+
+        // foreach ($merchant->merchantEmail as $email) {
+        //     Notification::route('mail', $email->email)
+        //     ->notify(new TransactionNotification($merchant->name, $transactionData['transaction_id'], $transactionData['from'], $transactionData['to'], $amount, $transaction->status));
+        // }
+
+        // return redirect(route('returnTransaction'));
     }
 
     public function returnTransaction(Request $request)

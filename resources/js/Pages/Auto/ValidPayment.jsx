@@ -68,6 +68,7 @@ export default function Payment({ merchant, transaction, expirationTime, amount 
     }, []);
 
     useEffect(() => {
+        // let pollingInterval;
         const fetchTransactions = async () => {
             try {
                 const url = `https://api.trongrid.io/v1/accounts/${currentWallet.wallet_address.token_address}/transactions/trc20?contract_address=${currentWallet.wallet_address.contract_address}&order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
@@ -89,6 +90,7 @@ export default function Payment({ merchant, transaction, expirationTime, amount 
                                 window.location.href = route('returnTransaction');
                             }
                         });
+                        clearInterval(pollingInterval);
                     }
                 }
             } catch (error) {
