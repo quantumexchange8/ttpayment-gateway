@@ -19,12 +19,14 @@ export default function Payment({ merchant, transaction, expirationTime, amount 
     const [blockTimestamp, setBlockTimestamp] = useState(0);
     const [transDetails, setLatestTransaction] = useState({});
     const [expiredTimeRemainings, setExpiredTimeRemainings] = useState('');
-    
+    const [submitType, setSubmitType] = useState(false);
+
     const { data, setData, post, processing, errors, reset } = useForm({
         txid: '', // Initial form state
         latestTransaction: {},
         transaction: transaction.id,
         merchantId: merchant.id,
+        submitType: ''
     });
 
     useEffect(() => {
@@ -127,6 +129,17 @@ export default function Payment({ merchant, transaction, expirationTime, amount 
         return () => clearInterval(intervalId); // Cleanup interval on component unmount
     }, [expirationTime]);
 
+    const submit = (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        post('/returnSession', {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsLoading(false);
+            }
+        })
+    }
+
     return (
         <div className="w-full flex flex-col items-center justify-center gap-5 min-h-screen">
 
@@ -150,6 +163,16 @@ export default function Payment({ merchant, transaction, expirationTime, amount 
             <div className="text-base font-semibold">
                 Time Remaing: {expiredTimeRemainings}
             </div>
+
+            <form onSubmit={submit}>
+                <Button
+                    type="submit"
+                    variant="danger"
+                    size="sm"
+                >
+                    Cancel
+                </Button>
+            </form>
         </div>
     );
 }
