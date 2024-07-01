@@ -125,7 +125,7 @@ class TransactionController extends Controller
 
     public function updateClientTransaction(Request $request)
     {
-        dd($request->all());
+        // dd($request->all());
         $datas = $request->all();
         
         $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress', 'merchantEmail'])->first();
