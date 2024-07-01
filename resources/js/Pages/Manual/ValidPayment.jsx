@@ -8,11 +8,13 @@ import { QRCode } from 'react-qrcode-logo';
 // import TronComponent from "@/Components/TronComponent";
 // import toast from 'react-hot-toast';
 
-export default function Payment({ merchant, merchantClientId, vCode, orderNumber, expirationTime }) {
+export default function Payment({ merchant, merchantClientId, vCode, orderNumber, expirationTime, transaction }) {
     const [currentWalletIndex, setCurrentWalletIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [timeRemaining, setTimeRemaining] = useState(merchant.refresh_time);
     const [expiredTimeRemainings, setExpiredTimeRemainings] = useState('');
+    const [txidVal, setTxidVal ] = useState();
+    const [txidError, setTxidError] = useState(null);
 
     useEffect(() => {
         const refreshInterval = merchant.refresh_time * 1000; // Convert to milliseconds
@@ -46,6 +48,8 @@ export default function Payment({ merchant, merchantClientId, vCode, orderNumber
         merchantClientId: merchantClientId,
         vCode: vCode,
         orderNumber: orderNumber,
+        txidValue: txidVal,
+        transaction: transaction.id,
     })
 
     const returnCall = () => {
@@ -57,9 +61,54 @@ export default function Payment({ merchant, merchantClientId, vCode, orderNumber
         })
     }
 
+    useEffect(() => {
+        const findTxID = async () => {
+            if (!data.txid) return;
+
+            try {
+                // const url = `https://nile.trongrid.io/v1/transactions/${data.txid}/events`;
+                const url = `https://apilist.tronscanapi.com/api/transaction-info?hash=${data.txid}`;
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.trc20TransferInfo && result.trc20TransferInfo.length > 0) {
+                    // console.log(result.trc20TransferInfo[0])
+                    setTxidVal(result.trc20TransferInfo[0]);
+                    setTxidError(null);
+
+                    setData({
+                        ...data,
+                        amountVal: result.trc20TransferInfo[0].amount_str,
+                        contractAddress: result.trc20TransferInfo[0].contract_address,
+                        decimals: result.trc20TransferInfo[0].decimals,
+                        fromAddress: result.trc20TransferInfo[0].from_address,
+                        toAddress: result.trc20TransferInfo[0].to_address,
+                        timeStamp: result.timestamp,
+                    });
+
+                } else {
+                    setTxidError('Please enter a valid txid');
+                    setTxidVal(null);
+                }
+                
+            } catch (error) {
+                console.error('Error fetching transactions:', error);
+                setTxidError('Error fetching transactions, please try again');
+                setTxidVal(null);
+            }
+        }
+        findTxID();
+
+    }, [data.txid]);
+
     const submit = (e) => {
+
         e.preventDefault();
         setIsLoading(true);
+        if (txidError) {
+            setIsLoading(false);
+            return
+        };
         post('/updateTransaction', {
             preserveScroll: true,
             onSuccess: () => {
@@ -101,7 +150,7 @@ export default function Payment({ merchant, merchantClientId, vCode, orderNumber
                 fgColor="#000000"
                 />
             </div>
-            <div className="text-base font-semibold">
+            <div className="text-base font-semibold text-center">
                 Wallet Address : {currentWallet.wallet_address.token_address}
             </div>
             <div className="text-base font-semibold">
@@ -138,7 +187,11 @@ export default function Payment({ merchant, merchantClientId, vCode, orderNumber
                                     required
                                     className="w-full"
                                 />
-                                <InputError message={errors.txid}/>
+                                {txidError && (
+                                    <div className="text-red-500">
+                                        {txidError}
+                                    </div>
+                                )}
                             </div>
                             <div className="space-y-1.5">
                                 <div className='flex items-center gap-1'>

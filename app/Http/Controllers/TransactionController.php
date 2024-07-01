@@ -99,65 +99,108 @@ class TransactionController extends Controller
 
             }
 
-            $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
-                $merchantClientId = $request->userId;
-    
-                if($merchant->deposit_type == 0 ) {
+            // $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
+            // $merchantClientId = $request->userId;
 
-                    return Inertia::render('Manual/ValidPayment', [
-                        'merchant' => $merchant,
-                        'merchantClientId' => $merchantClientId, //userid
-                        'vCode' => $request->vCode, //vCode
-                        'orderNumber' => $request->orderNumber, //orderNumber
-                        // 'expirationTime' => $expirationTime
-                    ]);
-                } else if ($merchant->deposit_type == 1) {
-    
-                    return Inertia::render('Auto/ValidPayment', [
-                        'merchant' => $merchant,
-                        // 'transaction' => $transaction->id,
-                    ]);
-    
-                }
+            // if($merchant->deposit_type == 0 ) {
+
+            //     return Inertia::render('Manual/ValidPayment', [
+            //         'merchant' => $merchant,
+            //         'merchantClientId' => $merchantClientId, //userid
+            //         'vCode' => $request->vCode, //vCode
+            //         'orderNumber' => $request->orderNumber, //orderNumber
+            //         // 'expirationTime' => $expirationTime
+            //     ]);
+            // } else if ($merchant->deposit_type == 1) {
+
+            //     return Inertia::render('Auto/ValidPayment', [
+            //         'merchant' => $merchant,
+            //         // 'transaction' => $transaction->id,
+            //     ]);
+
+            // }
         }
         
     }
 
     public function updateClientTransaction(Request $request)
     {
-        // dd($request->all());
+        dd($request->all());
         $datas = $request->all();
-       
-        $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress', 'merchantEmail'])->first();
-       
-        $transactionData = $request->latestTransaction;
-        $transaction = Transaction::find($request->transaction);
-        $nowDateTime = Carbon::now();
-        $amount = $transactionData['value'] / 1000000 ;
         
-        if ($transaction->amount != $amount) {
-            $transaction->update([
-                'txID' => $transactionData['transaction_id'],
-                'block_time' => $transactionData['block_timestamp'],
-                'from_wallet' => $transactionData['from'],
-                'to_wallet' => $transactionData['to'],
-                'txn_amount' => $amount,
-                'status' => 'pending',
-                'transaction_date' => $nowDateTime
-            ]);
-
+        $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress', 'merchantEmail'])->first();
+        
+        if ($merchant->deposit_type === 1) {
+            $transactionData = $request->latestTransaction;
+            $transaction = Transaction::find($request->transaction);
+            $nowDateTime = Carbon::now();
+            $amount = $transactionData['value'] / 1000000 ;
+            
+            if ($transaction->amount != $amount) {
+                $transaction->update([
+                    'txID' => $transactionData['transaction_id'],
+                    'block_time' => $transactionData['block_timestamp'],
+                    'from_wallet' => $transactionData['from'],
+                    'to_wallet' => $transactionData['to'],
+                    'txn_amount' => $amount,
+                    'status' => 'pending',
+                    'transaction_date' => $nowDateTime
+                ]);
+    
+            } else {
+                $transaction->update([
+                    'txID' => $transactionData['transaction_id'],
+                    'block_time' => $transactionData['block_timestamp'],
+                    'from_wallet' => $transactionData['from'],
+                    'to_wallet' => $transactionData['to'],
+                    'txn_amount' => $amount,
+                    'status' => 'success',
+                    'transaction_date' => $nowDateTime
+                ]);
+    
+            }
         } else {
-            $transaction->update([
-                'txID' => $transactionData['transaction_id'],
-                'block_time' => $transactionData['block_timestamp'],
-                'from_wallet' => $transactionData['from'],
-                'to_wallet' => $transactionData['to'],
-                'txn_amount' => $amount,
-                'status' => 'success',
-                'transaction_date' => $nowDateTime
-            ]);
+            // user input value
+            $transaction = Transaction::find($request->transaction);
+            $amount = $request->amount;
+            $txid = $request->txid;
+            $to_wallet = $request->to_wallet;
 
+            //get from txid value
+            $contract_address = $request->contractAddress;
+            $from_address = $request->fromAddress;
+            $to_address = $request->toAddress;
+            $amountVal = $request->amountVal / 1000000;
+            $timestamp  = $request->timeStamp;
+            $seconds = $timestamp / 1000;
+            $dateTime = Carbon::createFromTimestamp($seconds);
+            
+            if ($amount != $amountVal) {
+                $transaction->update([
+                    'txID' => $txid,
+                    'from_wallet' => $from_address,
+                    'to_wallet' => $to_address,
+                    'amount' => $amount,
+                    'txn_amount' => $amountVal,
+                    'status' => 'pending',
+                    'transaction_date' => $dateTime,
+                    'description' => 'different amount',
+                ]);
+            } else {
+                $transaction->update([
+                    'txID' => $txid,
+                    'from_wallet' => $from_address,
+                    'to_wallet' => $to_address,
+                    'amount' => $amount,
+                    'txn_amount' => $amountVal,
+                    'status' => 'pending',
+                    'transaction_date' => $dateTime,
+                ]);
+            }
+
+            return redirect(route('returnTransaction'));
         }
+
 
         // Log::debug($merchant);
         // Log::debug($merchant->merchantEmail);
