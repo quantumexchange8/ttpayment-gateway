@@ -25,6 +25,9 @@ class TransactionController extends Controller
 
     public function payment(Request $request)
     {
+        $datas = $request->all();
+        Log::debug($datas);
+
         $amount = $request->query('amount') / 1000000;
         $transactionNo = $request->query('orderNumber'); // TXN00000001 or no need
         $merchantId = $request->query('merchantId'); // MID000001
@@ -98,27 +101,6 @@ class TransactionController extends Controller
                 }
 
             }
-
-            // $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
-            // $merchantClientId = $request->userId;
-
-            // if($merchant->deposit_type == 0 ) {
-
-            //     return Inertia::render('Manual/ValidPayment', [
-            //         'merchant' => $merchant,
-            //         'merchantClientId' => $merchantClientId, //userid
-            //         'vCode' => $request->vCode, //vCode
-            //         'orderNumber' => $request->orderNumber, //orderNumber
-            //         // 'expirationTime' => $expirationTime
-            //     ]);
-            // } else if ($merchant->deposit_type == 1) {
-
-            //     return Inertia::render('Auto/ValidPayment', [
-            //         'merchant' => $merchant,
-            //         // 'transaction' => $transaction->id,
-            //     ]);
-
-            // }
         }
         
     }
@@ -127,7 +109,8 @@ class TransactionController extends Controller
     {
         // dd($request->all());
         $datas = $request->all();
-        
+        Log::debug($datas);
+
         $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress', 'merchantEmail'])->first();
         
         if ($merchant->deposit_type === 1) {
@@ -200,17 +183,6 @@ class TransactionController extends Controller
 
             return redirect(route('returnTransaction'));
         }
-
-
-        // Log::debug($merchant);
-        // Log::debug($merchant->merchantEmail);
-
-        // foreach ($merchant->merchantEmail as $email) {
-        //     Notification::route('mail', $email->email)
-        //     ->notify(new TransactionNotification($merchant->name, $transactionData['transaction_id'], $transactionData['from'], $transactionData['to'], $amount, $transaction->status));
-        // }
-
-        // return redirect(route('returnTransaction'));
     }
 
     public function returnTransaction(Request $request)
@@ -266,6 +238,25 @@ class TransactionController extends Controller
 
     public function returnSession(Request $request)
     {
+        $data = $request->all();
+        Log::debug($data);
+
+        $transactionId = $data['transaction'];
+        $transction = Transaction::find($transactionId);
+
+        $params = [
+            'merchant_id' => $transction->merchant_id,
+            'client_id' => $transction->client_id,
+            'transaction_type' => $transction->transaction_type,
+            'amount' => $transction->amount,
+            'transaction_number' => $transction->transaction_number,
+            'status' => $transction->status,
+            'created_at' => $transction->created_at,
+        ];
+
+        // $apiUrl = route('returnParams');
+        
+        
         $request->session()->flush();
 
         $payoutSetting = config('payment-gateway');
