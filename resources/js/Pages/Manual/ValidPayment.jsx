@@ -66,8 +66,8 @@ export default function Payment({ merchant, merchantClientId, vCode, orderNumber
             if (!data.txid) return;
 
             try {
-                // const url = `https://nile.trongrid.io/v1/transactions/${data.txid}/events`;
-                const url = `https://apilist.tronscanapi.com/api/transaction-info?hash=${data.txid}`;
+                const url = `https://nile.trongrid.io/v1/transactions/${data.txid}/events`;
+                // const url = `https://apilist.tronscanapi.com/api/transaction-info?hash=${data.txid}`;
                 const response = await fetch(url);
                 const result = await response.json();
 
