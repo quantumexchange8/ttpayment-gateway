@@ -269,7 +269,7 @@ class TransactionController extends Controller
         }
 
         $url = $selectedPayout['paymentUrl'] . 'dashboard';
-        $redirectUrl = $url ;
+        $redirectUrl = $url . "?" .  http_build_query($params);
 
         return Inertia::location($redirectUrl);
     }
