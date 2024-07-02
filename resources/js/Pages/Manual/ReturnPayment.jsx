@@ -3,11 +3,13 @@ import Button from "@/Components/Button";
 import { useForm } from "@inertiajs/react";
 import React, { useState } from "react";
 
-export default function ReturnPayment({ datas, total_amount }) {
+export default function ReturnPayment({ datas, total_amount, transaction }) {
     
     const [isLoading, setIsLoading] = useState(false);
 
-    const { data, setData, post, processing, errors, reset } = useForm({})
+    const { data, setData, post, processing, errors, reset } = useForm({
+        transaction: transaction
+    })
 
     const submit = (e) => {
         e.preventDefault();

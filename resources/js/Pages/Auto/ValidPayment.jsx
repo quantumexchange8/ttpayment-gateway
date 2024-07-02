@@ -91,7 +91,7 @@ export default function Payment({ merchant, transaction, expirationTime, amount 
                         post('/updateTransaction', {
                             preserveScroll: true,
                             onSuccess: () => {
-                                window.location.href = route('returnTransaction');
+                                window.location.href = `/returnTransaction?transaction_id=${transaction.id}`;
                             }
                         });
                         clearInterval(pollingInterval);
@@ -120,7 +120,7 @@ export default function Payment({ merchant, transaction, expirationTime, amount 
             } else {
                 
                 setExpiredTimeRemainings('Expired');
-                window.location.href = '/sessionTimeOut';
+                window.location.href = `/sessionTimeOut?transaction_id=${transaction.id}`;
             }
         };
 

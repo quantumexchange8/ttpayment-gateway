@@ -2,10 +2,11 @@ import Button from "@/Components/Button";
 import { useForm } from "@inertiajs/react";
 import React, { useState } from "react";
 
-export default function SessionTimeOut() {
+export default function SessionTimeOut({transactionId}) {
     const [isLoading, setIsLoading] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
+        transaction: transactionId,
     })
 
     const submit = (e) => {

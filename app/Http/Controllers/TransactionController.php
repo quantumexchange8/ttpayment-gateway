@@ -218,11 +218,17 @@ class TransactionController extends Controller
     public function returnTransaction(Request $request)
     {
 
-        return Inertia::render('Manual/ReturnPayment');
+        $transaction = $request->transaction_id;
+
+        return Inertia::render('Manual/ReturnPayment', [
+            'transaction' => $transaction,
+        ]);
     }
 
     public function returnUrl(Request $request)
     {
+        $transaction = $request->transaction;
+        $transactionVal = Transaction::find($transaction); 
         
         $amount = $request->amount;
         $payoutSetting = config('payment-gateway');
@@ -252,18 +258,32 @@ class TransactionController extends Controller
             'total_amount' => $request->total_amount,
         ];
 
+        $returnVal = [
+            'client_id' => $transactionVal->client_id,
+            'merchant_id' => $transactionVal->merchant_id,
+            'from_wallet' => $transactionVal->from_wallet,
+            'to_wallet' => $transactionVal->to_wallet,
+            'txID' => $transactionVal->txID,
+            'amount' => $transactionVal->amount,
+            'transaction_number' => $transactionVal->transaction_number,
+            'transaction_date' => $transactionVal->transaction_date,
+            'status' => $transactionVal->status,
+        ];
+
         $request->session()->flush();
 
         $url = $selectedPayout['paymentUrl'] . 'dashboard';
-        $redirectUrl = $url;
+        $redirectUrl = $url . "?" . http_build_query($returnVal);
 
         return Inertia::location($redirectUrl);
     }
 
-    public function sessionTimeOut()
+    public function sessionTimeOut(Request $request)
     {
-
-        return Inertia::render('Timeout');
+        // dd($request->all());
+        return Inertia::render('Timeout', [
+            'transactionId' => $request->transaction_id,
+        ]);
     }
 
     public function returnSession(Request $request)
@@ -280,7 +300,7 @@ class TransactionController extends Controller
             'transaction_type' => $transction->transaction_type,
             'amount' => $transction->amount,
             'transaction_number' => $transction->transaction_number,
-            'status' => $transction->status,
+            'status' => 'expired',
             'created_at' => $transction->created_at,
         ];
 
