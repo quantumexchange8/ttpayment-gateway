@@ -37,21 +37,19 @@ class CheckDepositStatus extends Command
 
             $tokenAddress = $pending->to_wallet;
             $createdAt = $pending->created_at;
-            // $min_timeStamp = strtotime($createdAt);
-            $maxCreatedAt = $createdAt->addMinutes(15);
-            // $max_timeStamp = strtotime($maxCreatedAt);
+            $min_timeStamp = strtotime($createdAt->getTimestampMs());
             
             $response = Http::withHeaders([
                 'accept' => 'application/json',
             ])->get('https://nile.trongrid.io/v1/accounts/' . $tokenAddress .'/transactions/trc20', [
-                'min_timestamp' => $createdAt,
-                'max_timestamp' => $maxCreatedAt,
+                'min_timestamp' => $min_timeStamp,
+                'only_to' => true,
             ]);
     
             if ($response->successful()) {
                 $transactionInfo = $response->json();
                 Log::debug($transactionInfo);
-                
+
                 return $response->json();
             } else {
                 return response()->json(['error' => 'Failed to fetch transactions'], 500);
