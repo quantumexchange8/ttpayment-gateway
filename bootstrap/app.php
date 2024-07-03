@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
             \App\Http\Middleware\PaymentSessionTimeout::class,
+            \App\Http\Middleware\VerifyCsrtToken::class,
         ]);
     })
     ->withSchedule(function(Schedule $schedule) {

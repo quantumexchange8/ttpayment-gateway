@@ -43,10 +43,9 @@ class CheckDepositStatus extends Command
             
             $response = Http::withHeaders([
                 'accept' => 'application/json',
-            ])->get('https://api.shasta.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
+            ])->get('https://nile.trongrid.io/v1/accounts/' . $tokenAddress .'/transactions/trc20', [
                 'min_timestamp' => $createdAt,
                 'max_timestamp' => $maxCreatedAt,
-                // 'only_to' => 'true'
             ]);
     
             if ($response->successful()) {
