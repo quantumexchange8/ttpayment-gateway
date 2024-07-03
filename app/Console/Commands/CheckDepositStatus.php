@@ -49,6 +49,9 @@ class CheckDepositStatus extends Command
             ]);
     
             if ($response->successful()) {
+                $transactionInfo = $response->json();
+                Log::debug($transactionInfo);
+                
                 return $response->json();
             } else {
                 return response()->json(['error' => 'Failed to fetch transactions'], 500);
