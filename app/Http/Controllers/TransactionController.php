@@ -180,6 +180,8 @@ class TransactionController extends Controller
                 ]);
     
             }
+
+            return redirect()->route('returnTransaction', ['transaction_id' => $transaction->id]);
         } else {
             // user input value
             $transaction = Transaction::find($request->transaction);
@@ -219,7 +221,7 @@ class TransactionController extends Controller
                 ]);
             }
 
-            return redirect(route('returnTransaction'));
+            return redirect()->route('returnTransaction', ['transaction_id' => $transaction->id]);
         }
     }
 
@@ -253,35 +255,26 @@ class TransactionController extends Controller
         $vCode = md5($intAmount . $selectedPayout['appId'] . $selectedPayout['merchantId']);
 
         $params = [
-            'amount' => $intAmount,
-            'orderNumber' => $request->orderNumber,
-            'userId' => $request->merchantClientId,
-            'merchantId' => $selectedPayout['merchantId'],
-            'vCode' => $vCode,
-            'receipt' => $request->receipt,
-            'to_wallet' => $request->to_wallet,
-            'txid' => $request->txid,
-            'vCode' => $request->vCode,
-            'status' => 'pending',
-            'total_amount' => $request->total_amount,
-        ];
-
-        $returnVal = [
-            'client_id' => $transactionVal->client_id,
             'merchant_id' => $transactionVal->merchant_id,
+            'client_id' => $transactionVal->client_id,
+            'transaction_type' => $transactionVal->transaction_type,
             'from_wallet' => $transactionVal->from_wallet,
             'to_wallet' => $transactionVal->to_wallet,
             'txID' => $transactionVal->txID,
-            'amount' => $transactionVal->amount,
+            'block_time' => $transactionVal->block_time,
+            'transfer_amount' => $transactionVal->txn_amount,
             'transaction_number' => $transactionVal->transaction_number,
-            'transaction_date' => $transactionVal->transaction_date,
+            'amount' => $transactionVal->amount,
             'status' => $transactionVal->status,
+            'payment_method' => $transactionVal->payment_method,
+            'created_at' => $transactionVal->created_at,
+            'description' => $transactionVal->description,
         ];
 
         $request->session()->flush();
 
         $url = $selectedPayout['paymentUrl'] . 'dashboard';
-        $redirectUrl = $url . "?" . http_build_query($returnVal);
+        $redirectUrl = $url . "?" . http_build_query($params);
 
         return Inertia::location($redirectUrl);
     }
@@ -308,12 +301,14 @@ class TransactionController extends Controller
             'transaction_type' => $transction->transaction_type,
             'amount' => $transction->amount,
             'transaction_number' => $transction->transaction_number,
-            'status' => 'expired',
+            'amount' => $transction->amount,
+            'status' => 'pending',
+            'payment_method' => $transction->payment_method,
             'created_at' => $transction->created_at,
+            'description' => $transction->description,
         ];
 
         // $apiUrl = route('returnParams');
-        
         
         $request->session()->flush();
 

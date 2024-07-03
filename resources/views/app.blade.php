@@ -6,6 +6,8 @@
         @if (App::environment('production'))
             <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
         @endif
+
+        <link rel="apple-touch-icon" href="public/assets/logo.png" />
         <title inertia>{{ config('app.name', 'Payment') }}</title>
 
         <!-- Fonts -->
