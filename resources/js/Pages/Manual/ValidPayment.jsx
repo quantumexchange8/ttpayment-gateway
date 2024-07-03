@@ -8,7 +8,7 @@ import { QRCode } from 'react-qrcode-logo';
 // import TronComponent from "@/Components/TronComponent";
 // import toast from 'react-hot-toast';
 
-export default function Payment({ merchant, merchantClientId, vCode, orderNumber, expirationTime, transaction }) {
+export default function Payment({ merchant, merchantClientId, vCode, orderNumber, expirationTime, transaction, tokenAddress }) {
     const [currentWalletIndex, setCurrentWalletIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [timeRemaining, setTimeRemaining] = useState(merchant.refresh_time);
@@ -44,7 +44,7 @@ export default function Payment({ merchant, merchantClientId, vCode, orderNumber
         txid: '',
         receipt: '',
         merchantId: merchant.id,
-        to_wallet: currentWallet.wallet_address.token_address,
+        to_wallet: tokenAddress,
         merchantClientId: merchantClientId,
         vCode: vCode,
         orderNumber: orderNumber,
@@ -66,8 +66,7 @@ export default function Payment({ merchant, merchantClientId, vCode, orderNumber
             if (!data.txid) return;
 
             try {
-                const url = `https://nile.trongrid.io/v1/transactions/${data.txid}/events`;
-                // const url = `https://apilist.tronscanapi.com/api/transaction-info?hash=${data.txid}`;
+                const url = `https://apilist.tronscanapi.com/api/transaction-info?hash=${data.txid}`;
                 const response = await fetch(url);
                 const result = await response.json();
 
@@ -146,16 +145,16 @@ export default function Payment({ merchant, merchantClientId, vCode, orderNumber
 
             <div>
                 <QRCode 
-                value={currentWallet.wallet_address.token_address} 
+                value={tokenAddress} 
                 fgColor="#000000"
                 />
             </div>
             <div className="text-base font-semibold text-center">
-                Wallet Address : {currentWallet.wallet_address.token_address}
+                Wallet Address : {tokenAddress}
             </div>
-            <div className="text-base font-semibold">
+            {/* <div className="text-base font-semibold">
                 QR Code refreshing in: {timeRemaining} seconds
-            </div>
+            </div> */}
 
             {
                 merchant.deposit_type == 0 && (

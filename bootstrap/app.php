@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,8 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
             \App\Http\Middleware\PaymentSessionTimeout::class,
         ]);
-
-        //
+    })
+    ->withSchedule(function(Schedule $schedule) {
+        $schedule->command('check:deposit-status')->everyMinute();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

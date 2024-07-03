@@ -9,6 +9,7 @@ use App\Notifications\TransactionNotification;
 use App\Services\RunningNumberService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -83,6 +84,9 @@ class TransactionController extends Controller
                 } else {
     
                     $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
+                    $randomWalletAddress = $merchant->merchantWalletAddress->random();
+                    $tokenAddress = $randomWalletAddress->walletAddress->token_address;
+
                     $merchantClientId = $request->userId;
         
                     if($merchant->deposit_type == 0 ) {
@@ -96,6 +100,7 @@ class TransactionController extends Controller
                             'amount' => $amount,
                             'transaction_number' => $transactionNo,
                             'tt_txn' => $tt_txn,
+                            'to_wallet' => $tokenAddress,
                         ]);
     
                         return Inertia::render('Manual/ValidPayment', [
@@ -105,6 +110,7 @@ class TransactionController extends Controller
                             'orderNumber' => $request->orderNumber, //orderNumber
                             'expirationTime' => $expirationTime,
                             'transaction' => $transaction,
+                            'tokenAddress' => $tokenAddress,
                         ]);
                     } else if ($merchant->deposit_type == 1) {
     
@@ -117,6 +123,7 @@ class TransactionController extends Controller
                             'amount' => $amount,
                             'transaction_number' => $transactionNo,
                             'tt_txn' => $tt_txn,
+                            'to_wallet' => $tokenAddress,
                         ]);
         
                         return Inertia::render('Auto/ValidPayment', [
@@ -124,6 +131,7 @@ class TransactionController extends Controller
                             'amount' => $amount,
                             'expirationTime' => $expirationTime,
                             'transaction' => $transaction,
+                            'tokenAddress' => $tokenAddress,
                         ]);
                     }
     

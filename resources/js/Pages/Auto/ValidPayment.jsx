@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import { QRCode } from 'react-qrcode-logo';
 // import TronComponent from "@/Components/TronComponent";
 
-export default function Payment({ merchant, transaction, expirationTime, amount }) {
+export default function Payment({ merchant, transaction, expirationTime, amount, tokenAddress }) {
 
     const getRandomIndex = () => Math.floor(Math.random() * merchant.merchant_wallet_address.length);
     
@@ -26,7 +26,7 @@ export default function Payment({ merchant, transaction, expirationTime, amount 
         latestTransaction: {},
         transaction: transaction.id,
         merchantId: merchant.id,
-        submitType: ''
+        submitType: '',
     });
 
     useEffect(() => {
@@ -50,9 +50,7 @@ export default function Payment({ merchant, transaction, expirationTime, amount 
         
         return () => clearInterval(interval);
     }, [merchant.refresh_time, merchant.merchant_wallet_address.length]);
-// 
-    const currentWallet = merchant.merchant_wallet_address[currentWalletIndex];
-    // console.log(currentWallet)
+    
     useEffect(() => {
         const fetchBlock = async () => {
             try {
@@ -74,8 +72,8 @@ export default function Payment({ merchant, transaction, expirationTime, amount 
         // let pollingInterval;
         const fetchTransactions = async () => {
             try {
-                // const url = `https://api.trongrid.io/v1/accounts/${currentWallet.wallet_address.token_address}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
-                const url = `https://nile.trongrid.io/v1/accounts/${currentWallet.wallet_address.token_address}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
+                // const url = `https://api.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
+                const url = `https://nile.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
                 const response = await fetch(url);
                 const result = await response.json();
                 console.log(result);
@@ -105,8 +103,9 @@ export default function Payment({ merchant, transaction, expirationTime, amount 
         const pollingInterval = setInterval(fetchTransactions, 4000); // Poll every 5 seconds
 
         return () => clearInterval(pollingInterval);
-    }, [currentWallet, blockTimestamp, transDetails]);
+    }, [blockTimestamp, transDetails]);
 
+    // console.log(currentWallet.wallet_address.token_address)
     useEffect(() => {
         const calculateTimeRemaining = () => {
             const now = new Date();
@@ -147,16 +146,16 @@ export default function Payment({ merchant, transaction, expirationTime, amount 
 
             <div>
                 <QRCode 
-                value={currentWallet.wallet_address.token_address} 
+                value={tokenAddress} 
                 fgColor="#000000"
                 />
             </div>
             <div className="text-base font-semibold text-center ">
-                Wallet Address : <span className=" font-bold" >{currentWallet.wallet_address.token_address}</span>
+                Wallet Address : <span className=" font-bold" >{tokenAddress}</span>
             </div>
-            <div className="text-base font-semibold">
+            {/* <div className="text-base font-semibold">
                 QR Code refreshing in: {timeRemaining} seconds
-            </div>
+            </div> */}
 
             <div className="text-base font-semibold">
                 Amount (USDT): $ <span>{amount}</span>
