@@ -249,7 +249,7 @@ class TransactionController extends Controller
         if ($domain === 'login.metafinx.com') {
             $selectedPayout = $payoutSetting['live'];
         } else {
-            $selectedPayout = $payoutSetting['staging'];
+            $selectedPayout = $payoutSetting['robotec'];
         }
 
         $vCode = md5($intAmount . $selectedPayout['appId'] . $selectedPayout['merchantId']);
@@ -273,7 +273,7 @@ class TransactionController extends Controller
 
         $request->session()->flush();
 
-        $url = $selectedPayout['paymentUrl'] . 'dashboard';
+        $url = $selectedPayout['paymentUrl'] . $selectedPayout['callBackUrl'];
         $redirectUrl = $url . "?" . http_build_query($params);
 
         return Inertia::location($redirectUrl);
@@ -318,10 +318,10 @@ class TransactionController extends Controller
         if ($domain === 'login.metafinx.com') {
             $selectedPayout = $payoutSetting['live'];
         } else {
-            $selectedPayout = $payoutSetting['staging'];
+            $selectedPayout = $payoutSetting['robotec'];
         }
 
-        $url = $selectedPayout['paymentUrl'] . 'dashboard';
+        $url = $selectedPayout['paymentUrl'] . $selectedPayout['returnUrl'];
         $redirectUrl = $url . "?" .  http_build_query($params);
 
         return Inertia::location($redirectUrl);
