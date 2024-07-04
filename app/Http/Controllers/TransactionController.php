@@ -276,7 +276,9 @@ class TransactionController extends Controller
         $url = $selectedPayout['paymentUrl'] . $selectedPayout['returnUrl'];
         $redirectUrl = $url . "?" . http_build_query($params);
 
-        return Inertia::location($redirectUrl);
+        $response = Http::post($url, $params);
+
+        return response()->json(['status', 'returned']);
     }
 
     public function sessionTimeOut(Request $request)
