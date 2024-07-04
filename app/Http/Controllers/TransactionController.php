@@ -273,7 +273,7 @@ class TransactionController extends Controller
 
         $request->session()->flush();
 
-        $url = $selectedPayout['paymentUrl'] . $selectedPayout['callBackUrl'];
+        $url = $selectedPayout['paymentUrl'] . $selectedPayout['returnUrl'];
         $redirectUrl = $url . "?" . http_build_query($params);
 
         return Inertia::location($redirectUrl);
