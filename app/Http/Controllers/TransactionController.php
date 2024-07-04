@@ -275,6 +275,7 @@ class TransactionController extends Controller
             'payment_method' => $transactionVal->payment_method,
             'created_at' => $transactionVal->created_at,
             'description' => $transactionVal->description,
+            'vCode' => $vCode,
         ];
 
         $request->session()->flush();
