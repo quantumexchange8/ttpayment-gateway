@@ -278,7 +278,6 @@ class TransactionController extends Controller
 
         $response = Http::post($url, $params);
 
-        return response()->json(['status', 'returned']);
     }
 
     public function sessionTimeOut(Request $request)
