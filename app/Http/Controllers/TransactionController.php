@@ -246,7 +246,7 @@ class TransactionController extends Controller
         $transaction = $request->transaction;
         $transactionVal = Transaction::find($transaction); 
         
-        $amount = $request->amount;
+        $amount = $transactionVal->amount;
         $payoutSetting = config('payment-gateway');
         $domain = $_SERVER['HTTP_HOST'];
         $paymentGateway = config('payment-gateway');
@@ -258,7 +258,7 @@ class TransactionController extends Controller
             $selectedPayout = $payoutSetting['robotec'];
         }
 
-        $vCode = md5($intAmount . $selectedPayout['appId'] . $selectedPayout['merchantId']);
+        $vCode = md5($transactionVal->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
 
         $params = [
             'merchant_id' => $transactionVal->merchant_id,
