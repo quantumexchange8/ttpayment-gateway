@@ -53,7 +53,7 @@ class CheckDepositStatus extends Command
                 //     'from_wallet' => 
                 // ]);
 
-                Log::debug('responseUrl', $response);
+                // Log::debug('responseUrl', $response);
                 Log::debug('CallBack Api transactionInfo', $transactionInfo);
 
                 return $response->json();
