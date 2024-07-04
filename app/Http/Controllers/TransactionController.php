@@ -180,6 +180,12 @@ class TransactionController extends Controller
                 ]);
     
             }
+            
+            // foreach ($merchant->merchantEmail as $emails) {
+            //     $email = $emails->email;
+
+            //     Notification::route('mail', $email)->notify(new TransactionNotification($merchant->name, $transactionData['transaction_id'], $transactionData['from'], $transactionData['to'], $amount, $transaction->status));
+            // }
 
             return redirect()->route('returnTransaction', ['transaction_id' => $transaction->id]);
         } else {
@@ -277,6 +283,14 @@ class TransactionController extends Controller
         $redirectUrl = $url . "?" . http_build_query($params);
 
         $response = Http::post($url, $params);
+
+        if ($response->successful()) {
+            // If the response is successful, redirect to the return URL with parameters
+            return redirect()->away($selectedPayout['paymentUrl'] . "?" . http_build_query($params));
+        } else {
+            // Handle the error, for example, redirect back with an error message
+            return redirect()->back()->withErrors(['message' => 'Failed to process the payment.']);
+        }
 
     }
 
