@@ -285,7 +285,7 @@ class TransactionController extends Controller
         if ($domain === 'login.metafinx.com') {
             $selectedPayout = $payoutSetting['live'];
         } else {
-            $selectedPayout = $payoutSetting['local'];
+            $selectedPayout = $payoutSetting['robotec'];
         }
 
         $vCode = md5($transactionVal->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
@@ -396,7 +396,7 @@ class TransactionController extends Controller
         if ($domain === 'login.metafinx.com') {
             $selectedPayout = $payoutSetting['live'];
         } else {
-            $selectedPayout = $payoutSetting['local'];
+            $selectedPayout = $payoutSetting['robotec'];
         }
 
         $url = $selectedPayout['paymentUrl'] . $selectedPayout['returnUrl'];
