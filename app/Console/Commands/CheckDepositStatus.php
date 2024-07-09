@@ -30,11 +30,13 @@ class CheckDepositStatus extends Command
     public function handle()
     {
 
-        $pendingPayment = Transaction::where('status', 'pending')->whereBetween('created_at', [now()->subMinutes(30), now()])->get();
-
+        $pendingPayment = Transaction::where('status', 'pending')
+                        // ->whereBetween('created_at', [now()->subMinutes(30), now()])
+                        ->get();
+                        
         foreach ($pendingPayment as $pending) {
             Log::debug($pending);
-
+            
             $tokenAddress = $pending->to_wallet;
             $createdAt = $pending->created_at;
             $min_timeStamp = strtotime($createdAt->getTimestampMs());
@@ -50,7 +52,7 @@ class CheckDepositStatus extends Command
                 $transactionInfo = $response->json();
 
                 // $pending->update([
-                //     'from_wallet' => 
+                //     'from_wallet' => $transactionInfo
                 // ]);
 
                 // Log::debug('responseUrl', $response);

@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import { QRCode } from 'react-qrcode-logo';
 // import TronComponent from "@/Components/TronComponent";
 
-export default function Payment({ merchant, transaction, expirationTime, amount, tokenAddress }) {
+export default function Payment({ merchant, transaction, expirationTime, amount, tokenAddress, storedToken }) {
 
     const getRandomIndex = () => Math.floor(Math.random() * merchant.merchant_wallet_address.length);
     
@@ -27,6 +27,7 @@ export default function Payment({ merchant, transaction, expirationTime, amount,
         transaction: transaction.id,
         merchantId: merchant.id,
         submitType: '',
+        storedToken: storedToken,
     });
 
     useEffect(() => {
@@ -89,7 +90,7 @@ export default function Payment({ merchant, transaction, expirationTime, amount,
                         post('/updateTransaction', {
                             preserveScroll: true,
                             onSuccess: () => {
-                                window.location.href = `/returnTransaction?transaction_id=${transaction.id}`;
+                                window.location.href = `/returnTransaction?transaction_id=${transaction.id}&token=${storedToken}`;
                             }
                         });
                         clearInterval(pollingInterval);

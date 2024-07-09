@@ -2,10 +2,10 @@
 
 return [
     'local' => [
-        'paymentUrl' => 'http://127.0.0.1:8010/dashboard',
+        'paymentUrl' => 'http://127.0.0.1:8010/',
         'appId' => 'metafinx',
         'merchantId' => '1',
-        'returnUrl' => 'testing_payment/depositReturn',
+        'returnUrl' => 'updateDeposit',
         'callBackUrl' => 'testing_payment/depositCallback',
     ],
     'metafinx' => [

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Transaction;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -27,10 +28,14 @@ class CheckExpiredDeposit extends Command
      */
     public function handle()
     {
-        $pendingPayment = Transaction::where('status', 'pending')->whereNotNull('txID')->get();
-
+        $pendingPayment = Transaction::where('status', 'pending')
+        ->whereNull('txID')
+        ->where('created_at', '<', Carbon::now()->subDay()) // Transactions created more than 24 hours ago
+        ->get();
+        
         foreach ($pendingPayment as $pending) {
-            Log::debug('expired status', $pending);
+            Log::debug('expired status', ['transaction' => $pending->toArray()]);
+
 
             $pending->update([
                 'status' => 'fail',

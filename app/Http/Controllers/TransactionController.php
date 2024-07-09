@@ -28,7 +28,7 @@ class TransactionController extends Controller
     public function payment(Request $request)
     {
         $datas = $request->all();
-        Log::debug($datas);
+        Log::debug('Incoming Data', $datas);
 
         $amount = $request->query('amount') / 1000000;
         $transactionNo = $request->query('orderNumber'); // TXN00000001 or no need
@@ -113,6 +113,8 @@ class TransactionController extends Controller
                             'tokenAddress' => $tokenAddress,
                         ]);
                     } else if ($merchant->deposit_type == 1) {
+
+                        $storedToken = $request->session()->get('session_token');
     
                         $transaction = Transaction::create([
                             'merchant_id' => $merchantId,
@@ -132,6 +134,7 @@ class TransactionController extends Controller
                             'expirationTime' => $expirationTime,
                             'transaction' => $transaction,
                             'tokenAddress' => $tokenAddress,
+                            'storedToken' => $storedToken,
                         ]);
                     }
     
@@ -146,7 +149,7 @@ class TransactionController extends Controller
     {
         // dd($request->all());
         $datas = $request->all();
-        Log::debug($datas);
+        Log::debug('capture txid', $datas);
 
         $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress', 'merchantEmail'])->first();
         
@@ -181,6 +184,14 @@ class TransactionController extends Controller
     
             }
             
+            
+            // foreach ($merchant->merchantEmail as $emails) {
+            //     $email = $emails->email;
+
+            //     Notification::route('mail', $email)->notify(new TransactionNotification($merchant->name, $transactionData['transaction_id'], $transactionData['from'], $transactionData['to'], $amount, $transaction->status));
+            // }
+
+
             // foreach ($merchant->merchantEmail as $emails) {
             //     $email = $emails->email;
 
@@ -235,15 +246,34 @@ class TransactionController extends Controller
     {
 
         $transaction = $request->transaction_id;
+        $storedToken = $request->token;
+        $transactionDetails = Transaction::find($transaction);
+        $merchant = Merchant::where('id', $transactionDetails->merchant_id)->with(['merchantWalletAddress.walletAddress', 'merchantEmail'])->first();
+
+        // $arrEmails = [];
+        // foreach ($merchant->merchantEmail as $emails) {
+        //     $email = $emails->email;
+        //     $arrEmails = $email;
+        //     dd($arrEmails);
+        // }
+        // dd($merchant->merchantEmail->email);
+
+        // $emailsReceiver = [
+
+        // ];
+
+        // Notification::route('mail', $email)->notify(new TransactionNotification($merchant->name, $transactionDetails->txID, $transactionDetails->txID, $transactionDetails->to_wallet, $transactionDetails->txn_amount, $transactionDetails->status));
 
         return Inertia::render('Manual/ReturnPayment', [
             'transaction' => $transaction,
+            'storedToken' => $storedToken,
         ]);
     }
 
     public function returnUrl(Request $request)
     {
         $transaction = $request->transaction;
+        $token = $request->storedToken;
         $transactionVal = Transaction::find($transaction); 
         
         $amount = $transactionVal->amount;
@@ -276,15 +306,19 @@ class TransactionController extends Controller
             'created_at' => $transactionVal->created_at,
             'description' => $transactionVal->description,
             'vCode' => $vCode,
+            'token' => $token,
         ];
 
         $request->session()->flush();
 
         $url = $selectedPayout['paymentUrl'] . $selectedPayout['returnUrl'];
         $redirectUrl = $url . "?" . http_build_query($params);
-
+        
         $response = Http::post($url, $params);
         Log::debug($response);
+
+        return $this->postRedirect($url, $params);
+
         // if ($response->successful()) {
         //     // If the response is successful, redirect to the return URL with parameters
         //     return redirect()->away($selectedPayout['paymentUrl'] . "?" . http_build_query($params));
@@ -293,6 +327,22 @@ class TransactionController extends Controller
         //     return redirect()->back()->withErrors(['message' => 'Failed to process the payment.']);
         // }
 
+    }
+
+    private function postRedirect($url, $data)
+    {
+        $html = '<html><body>';
+        $html .= '<form id="form" action="' . htmlspecialchars($url) . '" method="POST">';
+        
+        foreach ($data as $key => $value) {
+            $html .= '<input type="hidden" name="' . htmlspecialchars($key) . '" value="' . htmlspecialchars($value) . '">';
+        }
+        
+        $html .= '</form>';
+        $html .= '<script type="text/javascript">document.getElementById("form").submit();</script>';
+        $html .= '</body></html>';
+
+        return response($html);
     }
 
     public function sessionTimeOut(Request $request)
