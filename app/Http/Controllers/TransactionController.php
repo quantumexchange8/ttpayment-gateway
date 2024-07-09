@@ -333,6 +333,7 @@ class TransactionController extends Controller
     {
         $html = '<html><body>';
         $html .= '<form id="form" action="' . htmlspecialchars($url) . '" method="POST">';
+        $html .= '<input type="hidden" name="_token" value="' . csrf_token() . '">';
         
         foreach ($data as $key => $value) {
             $html .= '<input type="hidden" name="' . htmlspecialchars($key) . '" value="' . htmlspecialchars($value) . '">';

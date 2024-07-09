@@ -33,14 +33,15 @@ class CheckDepositStatus extends Command
         $pendingPayment = Transaction::where('status', 'pending')
                         // ->whereBetween('created_at', [now()->subMinutes(30), now()])
                         ->get();
-                        
+        
         foreach ($pendingPayment as $pending) {
             Log::debug($pending);
             
             $tokenAddress = $pending->to_wallet;
             $createdAt = $pending->created_at;
-            $min_timeStamp = strtotime($createdAt->getTimestampMs());
-            
+            // $min_timeStamp = strtotime($createdAt->getTimestampMs());
+            $min_timeStamp = $createdAt->timestamp * 1000;
+
             $response = Http::withHeaders([
                 'accept' => 'application/json',
             ])->get('https://nile.trongrid.io/v1/accounts/' . $tokenAddress .'/transactions/trc20', [
@@ -63,6 +64,5 @@ class CheckDepositStatus extends Command
                 return response()->json(['error' => 'Failed to fetch transactions'], 500);
             }
         }
-
     }
 }
