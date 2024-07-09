@@ -285,7 +285,7 @@ class TransactionController extends Controller
         if ($domain === 'login.metafinx.com') {
             $selectedPayout = $payoutSetting['live'];
         } else {
-            $selectedPayout = $payoutSetting['robotec'];
+            $selectedPayout = $payoutSetting['local'];
         }
 
         $vCode = md5($transactionVal->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
@@ -312,12 +312,23 @@ class TransactionController extends Controller
         $request->session()->flush();
 
         $url = $selectedPayout['paymentUrl'] . $selectedPayout['returnUrl'];
+        $callBackUrl = $selectedPayout['paymentUrl'] . $selectedPayout['callBackUrl'];
         $redirectUrl = $url . "?" . http_build_query($params);
         
-        $response = Http::post($url, $params);
+        $response = Http::post($callBackUrl, $params);
         Log::debug($response);
 
-        return $this->postRedirect($url, $params);
+        // return $this->postRedirect($callBackUrl, $params);
+
+        if ($response['success']) {
+            $params['reponse_status'] = 'success';
+
+            return Http::post($url, $params);
+        } else {
+            $params['reponse_status'] = 'failed';
+
+            return Http::post($url, $params);
+        }
 
         // if ($response->successful()) {
         //     // If the response is successful, redirect to the return URL with parameters
@@ -334,7 +345,7 @@ class TransactionController extends Controller
         $html = '<html><body>';
         $html .= '<form id="form" action="' . htmlspecialchars($url) . '" method="POST">';
         $html .= '<input type="hidden" name="_token" value="' . csrf_token() . '">';
-        
+
         foreach ($data as $key => $value) {
             $html .= '<input type="hidden" name="' . htmlspecialchars($key) . '" value="' . htmlspecialchars($value) . '">';
         }
@@ -385,7 +396,7 @@ class TransactionController extends Controller
         if ($domain === 'login.metafinx.com') {
             $selectedPayout = $payoutSetting['live'];
         } else {
-            $selectedPayout = $payoutSetting['robotec'];
+            $selectedPayout = $payoutSetting['local'];
         }
 
         $url = $selectedPayout['paymentUrl'] . $selectedPayout['returnUrl'];
