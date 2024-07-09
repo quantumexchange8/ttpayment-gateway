@@ -19,6 +19,6 @@ class VerifyCsrtToken
     }
 
     protected $except = [
-        'returnDeposit'
+        'deposit_return'
     ];
 }
