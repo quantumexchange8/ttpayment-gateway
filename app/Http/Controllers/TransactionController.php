@@ -313,7 +313,7 @@ class TransactionController extends Controller
 
         $url = $selectedPayout['paymentUrl'] . $selectedPayout['returnUrl'];
         $callBackUrl = $selectedPayout['paymentUrl'] . $selectedPayout['callBackUrl'];
-        $redirectUrl = $url . "?" . http_build_query($params);
+        
         
         $response = Http::post($callBackUrl, $params);
         Log::debug($response);
@@ -322,13 +322,13 @@ class TransactionController extends Controller
 
         if ($response['success']) {
             $params['response_status'] = 'success';
-
-            return redirect()->away($redirectUrl);
         } else {
             $params['response_status'] = 'failed';
-
-             return redirect()->away($redirectUrl);
         }
+
+        $redirectUrl = $url . "?" . http_build_query($params);
+        return Inertia::location($redirectUrl);
+
 
         // if ($response->successful()) {
         //     // If the response is successful, redirect to the return URL with parameters
