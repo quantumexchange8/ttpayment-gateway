@@ -323,11 +323,11 @@ class TransactionController extends Controller
         if ($response['success']) {
             $params['reponse_status'] = 'success';
 
-            return Http::post($url, $params);
+            return redirect()->away($selectedPayout['paymentUrl'] . "?" . http_build_query($params));
         } else {
             $params['reponse_status'] = 'failed';
 
-            return Http::post($url, $params);
+            return redirect()->away($selectedPayout['paymentUrl'] . "?" . http_build_query($params));
         }
 
         // if ($response->successful()) {
