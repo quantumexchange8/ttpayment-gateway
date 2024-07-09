@@ -321,11 +321,11 @@ class TransactionController extends Controller
         // return $this->postRedirect($callBackUrl, $params);
 
         if ($response['success']) {
-            $params['reponse_status'] = 'success';
+            $params['response_status'] = 'success';
 
             return redirect()->away($redirectUrl);
         } else {
-            $params['reponse_status'] = 'failed';
+            $params['response_status'] = 'failed';
 
              return redirect()->away($redirectUrl);
         }
