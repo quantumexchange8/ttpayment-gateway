@@ -356,6 +356,7 @@ class TransactionController extends Controller
             'payment_method' => $transction->payment_method,
             'created_at' => $transction->created_at,
             'description' => $transction->description,
+            'response_status' => 'pending',
         ];
 
         // $apiUrl = route('returnParams');

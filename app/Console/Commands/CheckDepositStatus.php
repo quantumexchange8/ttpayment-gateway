@@ -55,7 +55,7 @@ class CheckDepositStatus extends Command
 
                 if (isset($transactionInfo['data'])) {
                     foreach ($transactionInfo['data'] as $transaction) {
-                        Log::debug('Transaction Details', $transaction);
+                        Log::debug('Transaction Details', ['transaction' => $transaction->toArray()]);
 
                         if (Transaction::where('txID', $transaction['transaction_id'])->exists()) {
                             Log::debug('no exist txid', $transaction['transaction_id']);
@@ -76,10 +76,10 @@ class CheckDepositStatus extends Command
                             //     'status' => 'success',
                             // ]);
 
-                            // $payoutSetting = config('payment-gateway');
-                            // $domain = $_SERVER['HTTP_HOST'];
+                            $payoutSetting = config('payment-gateway');
+                            $domain = $_SERVER['HTTP_HOST'];
 
-                            // $selectedPayout = $payoutSetting['robotec'];
+                            $selectedPayout = $payoutSetting['robotec'];
                             Log::debug('$pending', $pending);
                         }
                     }
