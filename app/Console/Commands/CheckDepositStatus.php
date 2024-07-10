@@ -55,13 +55,13 @@ class CheckDepositStatus extends Command
 
                 if (!empty($transactionInfo['data'])) {
                     foreach ($transactionInfo['data'] as $transaction) {
-                        Log::debug('Transaction Details', ['transaction' => $transaction]);
 
                         if (Transaction::where('txID', $transaction['transaction_id'])->exists()) {
                             Log::debug('no exist txid', $transaction['transaction_id']);
                             
                         } else {
                             Log::debug('Transaction ID does not exist', $transaction['transaction_id']);
+                            Log::debug('pending row', $pending);
 
                             $txnAmount = $transaction['value'] / 1000000;
                             $timestamp = $transaction['block_timestamp'] / 1000;
