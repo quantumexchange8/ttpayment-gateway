@@ -67,19 +67,19 @@ class CheckDepositStatus extends Command
 
                         foreach ($transactions as $transaction) {
 
-                            Log::debug('array trans', $transaction->transaction_id);
+                            Log::debug('array trans', $transaction['transaction_id']);
 
-                            if (Transaction::where('txID', $transaction->transaction_id)->doesntExist()) {
+                            if (Transaction::where('txID', $transaction['transaction_id'])->doesntExist()) {
                                 Log::debug('Transaction ID does not exist');
     
-                                $txnAmount = $transaction->value / 1000000;
-                                $timestamp = $transaction->block_timestamp / 1000;
+                                $txnAmount = $transaction['value'] / 1000000;
+                                $timestamp = $transaction['block_timestamp'] / 1000;
                                 $transaction_date = Carbon::createFromTimestamp($timestamp);
     
                                 $pending->update([
-                                    'from_wallet' => $transaction->from,
-                                    'txID' => $transaction->transaction_id,
-                                    'block_time' => $transaction->block_timestamp,
+                                    'from_wallet' => $transaction['from'],
+                                    'txID' => $transaction['transaction_id'],
+                                    'block_time' => $transaction['block_timestamp'],
                                     'txn_amount' => $txnAmount,
                                     'transaction_date' => $transaction_date,
                                     'status' => 'success',
@@ -116,7 +116,7 @@ class CheckDepositStatus extends Command
     
                                 // Log::debug('$pending', $pending);
                             } else {
-                                Log::debug('txid', $transaction->transaction_id);
+                                Log::debug('txid', $transaction['transaction_id']);
                             }
                         }
 
