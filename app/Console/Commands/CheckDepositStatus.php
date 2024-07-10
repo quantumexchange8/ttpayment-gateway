@@ -67,7 +67,7 @@ class CheckDepositStatus extends Command
 
                         foreach ($transactions as $transaction) {
 
-                            Log::debug('All transactions', $transaction);
+                            Log::debug('array trans', $transaction->transaction_id);
 
                             if (Transaction::where('txID', $transaction->transaction_id)->doesntExist()) {
                                 Log::debug('Transaction ID does not exist');
@@ -77,9 +77,9 @@ class CheckDepositStatus extends Command
                                 $transaction_date = Carbon::createFromTimestamp($timestamp);
     
                                 $pending->update([
-                                    'from_wallet' => $transaction['from'],
+                                    'from_wallet' => $transaction->from,
                                     'txID' => $transaction->transaction_id,
-                                    'block_time' => $transaction['block_timestamp'],
+                                    'block_time' => $transaction->block_timestamp,
                                     'txn_amount' => $txnAmount,
                                     'transaction_date' => $transaction_date,
                                     'status' => 'success',
