@@ -63,6 +63,8 @@ class CheckDepositStatus extends Command
                 if (!empty($transactionInfo['data'])) {
                     foreach ($transactionInfo['data'] as $transaction) {
 
+                        Log::debug('All transaction', $transaction);
+
                         if (Transaction::where('txID', $transaction->transaction_id)->doesntExist()) {
                             Log::debug('Transaction ID does not exist');
                             // Log::debug('pending row', $pending);
