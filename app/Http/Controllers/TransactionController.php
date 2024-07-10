@@ -279,8 +279,6 @@ class TransactionController extends Controller
         $amount = $transactionVal->amount;
         $payoutSetting = config('payment-gateway');
         $domain = $_SERVER['HTTP_HOST'];
-        $paymentGateway = config('payment-gateway');
-        $intAmount = intval($amount * 100);
 
         if ($domain === 'login.metafinx.com') {
             $selectedPayout = $payoutSetting['live'];
@@ -329,32 +327,6 @@ class TransactionController extends Controller
         $redirectUrl = $url . "?" . http_build_query($params);
         return Inertia::location($redirectUrl);
 
-
-        // if ($response->successful()) {
-        //     // If the response is successful, redirect to the return URL with parameters
-        //     return redirect()->away($selectedPayout['paymentUrl'] . "?" . http_build_query($params));
-        // } else {
-        //     // Handle the error, for example, redirect back with an error message
-        //     return redirect()->back()->withErrors(['message' => 'Failed to process the payment.']);
-        // }
-
-    }
-
-    private function postRedirect($url, $data)
-    {
-        $html = '<html><body>';
-        $html .= '<form id="form" action="' . htmlspecialchars($url) . '" method="POST">';
-        $html .= '<input type="hidden" name="_token" value="' . csrf_token() . '">';
-
-        foreach ($data as $key => $value) {
-            $html .= '<input type="hidden" name="' . htmlspecialchars($key) . '" value="' . htmlspecialchars($value) . '">';
-        }
-        
-        $html .= '</form>';
-        $html .= '<script type="text/javascript">document.getElementById("form").submit();</script>';
-        $html .= '</body></html>';
-
-        return response($html);
     }
 
     public function sessionTimeOut(Request $request)

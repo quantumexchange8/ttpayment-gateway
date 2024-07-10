@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Transaction;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -31,11 +32,11 @@ class CheckDepositStatus extends Command
     {
 
         $pendingPayment = Transaction::where('status', 'pending')
-                        // ->whereBetween('created_at', [now()->subMinutes(30), now()])
+                        ->whereBetween('created_at', [now()->subMinutes(30), now()])
                         ->get();
         
         foreach ($pendingPayment as $pending) {
-            Log::debug($pending);
+            Log::debug('all pending data', $pending);
             
             $tokenAddress = $pending->to_wallet;
             $createdAt = $pending->created_at;
@@ -52,11 +53,40 @@ class CheckDepositStatus extends Command
             if ($response->successful()) {
                 $transactionInfo = $response->json();
 
-                // $pending->update([
-                //     'from_wallet' => $transactionInfo
-                // ]);
+                if (isset($transactionInfo['data'])) {
+                    foreach ($transactionInfo['data'] as $transaction) {
+                        Log::debug('Transaction Details', $transaction);
 
-                // Log::debug('responseUrl', $response);
+                        if (Transaction::where('txID', $transaction['transaction_id'])->exists()) {
+                            Log::debug('no exist txid', $transaction['transaction_id']);
+                            
+                        } else {
+                            Log::debug('Transaction ID does not exist', $transaction['transaction_id']);
+
+                            $txnAmount = $transaction['value'] / 1000000;
+                            $timestamp = $transaction['block_timestamp'] / 1000;
+                            $transaction_date = Carbon::createFromTimestamp($timestamp);
+
+                            // $pending->update([
+                            //     'from_wallet' => $transaction['from'],
+                            //     'txID' => $transaction['transaction_id'],
+                            //     'block_time' => $transaction['block_timestamp'],
+                            //     'txn_amount' => $txnAmount,
+                            //     'transaction_date' => $transaction_date,
+                            //     'status' => 'success',
+                            // ]);
+
+                            // $payoutSetting = config('payment-gateway');
+                            // $domain = $_SERVER['HTTP_HOST'];
+
+                            // $selectedPayout = $payoutSetting['robotec'];
+                            Log::debug('$pending', $pending);
+                        }
+                    }
+                } else {
+                    Log::debug('No transaction data found.');
+                }
+
                 Log::debug('CallBack Api transactionInfo', $transactionInfo);
 
                 return $response->json();
