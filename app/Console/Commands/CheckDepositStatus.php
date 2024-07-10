@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class CheckDepositStatus extends Command
 {
@@ -32,12 +33,11 @@ class CheckDepositStatus extends Command
     {
 
         $pendingPayment = Transaction::where('status', 'pending')
-                        ->whereBetween('created_at', [now()->subMinutes(30), now()])
                         ->get();
         
         foreach ($pendingPayment as $pending) {
             Log::debug('all pending data', ['transaction' => $pending->toArray()]);
-            
+
             $tokenAddress = $pending->to_wallet;
             $createdAt = $pending->created_at;
             // $min_timeStamp = strtotime($createdAt->getTimestampMs());
@@ -53,9 +53,9 @@ class CheckDepositStatus extends Command
             if ($response->successful()) {
                 $transactionInfo = $response->json();
 
-                if (isset($transactionInfo['data'])) {
+                if (!empty($transactionInfo['data'])) {
                     foreach ($transactionInfo['data'] as $transaction) {
-                        Log::debug('Transaction Details', ['transaction' => $transaction->toArray()]);
+                        Log::debug('Transaction Details', ['transaction' => $transaction]);
 
                         if (Transaction::where('txID', $transaction['transaction_id'])->exists()) {
                             Log::debug('no exist txid', $transaction['transaction_id']);
@@ -80,6 +80,31 @@ class CheckDepositStatus extends Command
                             $domain = $_SERVER['HTTP_HOST'];
 
                             $selectedPayout = $payoutSetting['robotec'];
+                            $vCode = md5($pending->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
+                            $token = Str::random(32);
+
+                            $params = [
+                                'merchant_id' => $pending->merchant_id,
+                                'client_id' => $pending->client_id,
+                                'transaction_type' => $pending->transaction_type,
+                                'from_wallet' => $pending->from_wallet,
+                                'to_wallet' => $pending->to_wallet,
+                                'txID' => $pending->txID,
+                                'block_time' => $pending->block_time,
+                                'transfer_amount' => $pending->txn_amount,
+                                'transaction_number' => $pending->transaction_number,
+                                'amount' => $pending->amount,
+                                'status' => $pending->status,
+                                'payment_method' => $pending->payment_method,
+                                'created_at' => $pending->created_at,
+                                'description' => $pending->description,
+                                'vCode' => $vCode,
+                                'token' => $token,
+                            ];
+
+                            $callBackUrl = $selectedPayout['paymentUrl'] . $selectedPayout['callBackUrl'];
+                            $response = Http::post($callBackUrl, $params);
+
                             Log::debug('$pending', $pending);
                         }
                     }
