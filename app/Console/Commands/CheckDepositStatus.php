@@ -36,7 +36,7 @@ class CheckDepositStatus extends Command
                         ->get();
         
         foreach ($pendingPayment as $pending) {
-            Log::debug('all pending data', $pending);
+            Log::debug('all pending data', ['transaction' => $pending->toArray()]);
             
             $tokenAddress = $pending->to_wallet;
             $createdAt = $pending->created_at;
