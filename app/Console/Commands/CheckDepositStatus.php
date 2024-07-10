@@ -61,66 +61,72 @@ class CheckDepositStatus extends Command
                 $transactionInfo = $response->json();
 
                 if (!empty($transactionInfo['data'])) {
-                    foreach ($transactionInfo['data'] as $transactions) {
+                    $transactions = json_decode($transactionInfo['data'], true);
 
-                        Log::debug('All transactions', $transactions);
+                    Log::debug('Decoded Transactions: ', $transactions);
 
+                    if (is_array($transactions)) {
                         foreach ($transactions as $transaction) {
-
-                            Log::debug('array trans', $transaction['transaction_id']);
-
-                            if (Transaction::where('txID', $transaction['transaction_id'])->doesntExist()) {
-                                Log::debug('Transaction ID does not exist');
     
-                                $txnAmount = $transaction['value'] / 1000000;
-                                $timestamp = $transaction['block_timestamp'] / 1000;
-                                $transaction_date = Carbon::createFromTimestamp($timestamp);
-    
-                                $pending->update([
-                                    'from_wallet' => $transaction['from'],
-                                    'txID' => $transaction['transaction_id'],
-                                    'block_time' => $transaction['block_timestamp'],
-                                    'txn_amount' => $txnAmount,
-                                    'transaction_date' => $transaction_date,
-                                    'status' => 'success',
-                                ]);
-    
-                                $payoutSetting = config('payment-gateway');
-                                $domain = $_SERVER['HTTP_HOST'];
-    
-                                $selectedPayout = $payoutSetting['robotec'];
-                                $vCode = md5($pending->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
-                                $token = Str::random(32);
-    
-                                $params = [
-                                    'merchant_id' => $pending->merchant_id,
-                                    'client_id' => $pending->client_id,
-                                    'transaction_type' => $pending->transaction_type,
-                                    'from_wallet' => $pending->from_wallet,
-                                    'to_wallet' => $pending->to_wallet,
-                                    'txID' => $pending->txID,
-                                    'block_time' => $pending->block_time,
-                                    'transfer_amount' => $pending->txn_amount,
-                                    'transaction_number' => $pending->transaction_number,
-                                    'amount' => $pending->amount,
-                                    'status' => $pending->status,
-                                    'payment_method' => $pending->payment_method,
-                                    'created_at' => $pending->created_at,
-                                    'description' => $pending->description,
-                                    'vCode' => $vCode,
-                                    'token' => $token,
-                                ];
-    
-                                $callBackUrl = $selectedPayout['paymentUrl'] . $selectedPayout['callBackUrl'];
-                                $response = Http::post($callBackUrl, $params);
-    
-                                // Log::debug('$pending', $pending);
+                            // Log::debug('array trans', $transaction['transaction_id']);
+                            if (is_array($transaction)) {
+                                if (Transaction::where('txID', $transaction['transaction_id'])->doesntExist()) {
+                                    Log::debug('Transaction ID does not exist');
+        
+                                    $txnAmount = $transaction['value'] / 1000000;
+                                    $timestamp = $transaction['block_timestamp'] / 1000;
+                                    $transaction_date = Carbon::createFromTimestamp($timestamp);
+        
+                                    $pending->update([
+                                        'from_wallet' => $transaction['from'],
+                                        'txID' => $transaction['transaction_id'],
+                                        'block_time' => $transaction['block_timestamp'],
+                                        'txn_amount' => $txnAmount,
+                                        'transaction_date' => $transaction_date,
+                                        'status' => 'success',
+                                    ]);
+        
+                                    $payoutSetting = config('payment-gateway');
+                                    $domain = $_SERVER['HTTP_HOST'];
+        
+                                    $selectedPayout = $payoutSetting['robotec'];
+                                    $vCode = md5($pending->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
+                                    $token = Str::random(32);
+        
+                                    $params = [
+                                        'merchant_id' => $pending->merchant_id,
+                                        'client_id' => $pending->client_id,
+                                        'transaction_type' => $pending->transaction_type,
+                                        'from_wallet' => $pending->from_wallet,
+                                        'to_wallet' => $pending->to_wallet,
+                                        'txID' => $pending->txID,
+                                        'block_time' => $pending->block_time,
+                                        'transfer_amount' => $pending->txn_amount,
+                                        'transaction_number' => $pending->transaction_number,
+                                        'amount' => $pending->amount,
+                                        'status' => $pending->status,
+                                        'payment_method' => $pending->payment_method,
+                                        'created_at' => $pending->created_at,
+                                        'description' => $pending->description,
+                                        'vCode' => $vCode,
+                                        'token' => $token,
+                                    ];
+        
+                                    $callBackUrl = $selectedPayout['paymentUrl'] . $selectedPayout['callBackUrl'];
+                                    $response = Http::post($callBackUrl, $params);
+        
+                                    // Log::debug('$pending', $pending);
+                                } else {
+                                    Log::debug('txid', $transaction['transaction_id']);
+                                }
                             } else {
-                                Log::debug('txid', $transaction['transaction_id']);
+                                Log::error('Expected transaction to be an array: ' . json_encode($transaction));
                             }
                         }
-
+                    } else {
+                        Log::error('Expected transactions to be an array');
                     }
+
                 } else {
                     Log::debug('No transaction data found.');
                 }
