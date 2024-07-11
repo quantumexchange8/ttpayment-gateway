@@ -70,7 +70,7 @@ class CheckDepositStatus extends Command
     
                             $txnAmount = $transaction['value'] / 1000000;
                             $timestamp = $transaction['block_timestamp'] / 1000;
-                            $transaction_date = Carbon::createFromTimestamp($timestamp);
+                            $transaction_date = Carbon::createFromTimestamp($timestamp)->setTimezone('GMT+8');
     
                             $pending->update([
                                 'from_wallet' => $transaction['from'],
