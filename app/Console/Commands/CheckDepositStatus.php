@@ -51,6 +51,43 @@ class CheckDepositStatus extends Command
             //     'min_timestamp' => $min_timeStamp,
             //     'only_to' => true,
             // ]);
+
+            // $arrayVar = [
+            //     [
+            //         "transaction_id" =>
+            //             "79071b4bcb996365af284da07e1c09d54c83f8e01584ea882a5a3e56cf3c9405",
+            //         "token_info" => [
+            //             "symbol" => "USDT",
+            //             "address" => "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj",
+            //             "decimals" => 6,
+            //             "name" => "Tether USD",
+            //         ],
+            //         "block_timestamp" => 1720661262000,
+            //         "from" => "TVwuQiDEre9nTNvEYnFmPuNFW6QAhGv85p",
+            //         "to" => "TETwcWyNtNkXPdf69Kgzzt38oD1KbT74rM",
+            //         "type" => "Transfer",
+            //         "value" => "20000000",
+            //     ],
+            //     [
+            //         "transaction_id" =>
+            //             "94f3bd775a514008c88937825302518b1fb6ab05754590d6e73553589c8f6818",
+            //         "token_info" => [
+            //             "symbol" => "USDT",
+            //             "address" => "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj",
+            //             "decimals" => 6,
+            //             "name" => "Tether USD",
+            //         ],
+            //         "block_timestamp" => 1720594269000,
+            //         "from" => "TVwuQiDEre9nTNvEYnFmPuNFW6QAhGv85p",
+            //         "to" => "TETwcWyNtNkXPdf69Kgzzt38oD1KbT74rM",
+            //         "type" => "Transfer",
+            //         "value" => "20000000",
+            //     ],
+            // ];
+
+            // foreach($arrayVar as $val) {
+            //     dd($val['transaction_id']);
+            // }
                        
             $response = Http::get('https://nile.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
                 'min_timestamp' => $min_timeStamp,
@@ -63,7 +100,7 @@ class CheckDepositStatus extends Command
                 foreach($transactionInfo as $transactions) {
                     Log::debug('transactions', $transactions);
 
-                    foreach($transactions['data'] as $transaction) {
+                    foreach($transactions as $transaction) {
                         Log::debug('data', $transaction);
                         Log::debug('data test', $transaction['transaction_id']);
                     }
