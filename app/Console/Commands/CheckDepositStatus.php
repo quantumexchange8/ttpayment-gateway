@@ -53,36 +53,19 @@ class CheckDepositStatus extends Command
             // ]);
 
             // $arrayVar = [
-            //     [
-            //         "transaction_id" =>
-            //             "79071b4bcb996365af284da07e1c09d54c83f8e01584ea882a5a3e56cf3c9405",
-            //         "token_info" => [
-            //             "symbol" => "USDT",
-            //             "address" => "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj",
-            //             "decimals" => 6,
-            //             "name" => "Tether USD",
-            //         ],
-            //         "block_timestamp" => 1720661262000,
-            //         "from" => "TVwuQiDEre9nTNvEYnFmPuNFW6QAhGv85p",
-            //         "to" => "TETwcWyNtNkXPdf69Kgzzt38oD1KbT74rM",
-            //         "type" => "Transfer",
-            //         "value" => "20000000",
+            //     "transaction_id" =>
+            //         "94f3bd775a514008c88937825302518b1fb6ab05754590d6e73553589c8f6818",
+            //     "token_info" => [
+            //         "symbol" => "USDT",
+            //         "address" => "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj",
+            //         "decimals" => 6,
+            //         "name" => "Tether USD",
             //     ],
-            //     [
-            //         "transaction_id" =>
-            //             "94f3bd775a514008c88937825302518b1fb6ab05754590d6e73553589c8f6818",
-            //         "token_info" => [
-            //             "symbol" => "USDT",
-            //             "address" => "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj",
-            //             "decimals" => 6,
-            //             "name" => "Tether USD",
-            //         ],
-            //         "block_timestamp" => 1720594269000,
-            //         "from" => "TVwuQiDEre9nTNvEYnFmPuNFW6QAhGv85p",
-            //         "to" => "TETwcWyNtNkXPdf69Kgzzt38oD1KbT74rM",
-            //         "type" => "Transfer",
-            //         "value" => "20000000",
-            //     ],
+            //     "block_timestamp" => 1720594269000,
+            //     "from" => "TVwuQiDEre9nTNvEYnFmPuNFW6QAhGv85p",
+            //     "to" => "TETwcWyNtNkXPdf69Kgzzt38oD1KbT74rM",
+            //     "type" => "Transfer",
+            //     "value" => "20000000",
             // ];
 
             // foreach($arrayVar as $val) {
@@ -104,54 +87,54 @@ class CheckDepositStatus extends Command
                         Log::debug('data', $transaction);
                         Log::debug('data test', ['transaction_id' => $transaction['transaction_id']]);
 
-                        // if (Transaction::where('txID', $transaction['transaction_id'])->doesntExist()) {
-                        //     Log::debug('Transaction ID does not exist');
+                        if (Transaction::where('txID', $transaction['transaction_id'])->doesntExist()) {
+                            Log::debug('Transaction ID does not exist');
     
-                        //     $txnAmount = $transaction['value'] / 1000000;
-                        //     $timestamp = $transaction['block_timestamp'] / 1000;
-                        //     $transaction_date = Carbon::createFromTimestamp($timestamp);
+                            $txnAmount = $transaction['value'] / 1000000;
+                            $timestamp = $transaction['block_timestamp'] / 1000;
+                            $transaction_date = Carbon::createFromTimestamp($timestamp);
     
-                        //     $pending->update([
-                        //         'from_wallet' => $transaction['from'],
-                        //         'txID' => $transaction['transaction_id'],
-                        //         'block_time' => $transaction['block_timestamp'],
-                        //         'txn_amount' => $txnAmount,
-                        //         'transaction_date' => $transaction_date,
-                        //         'status' => 'success',
-                        //     ]);
+                            $pending->update([
+                                'from_wallet' => $transaction['from'],
+                                'txID' => $transaction['transaction_id'],
+                                'block_time' => $transaction['block_timestamp'],
+                                'txn_amount' => $txnAmount,
+                                'transaction_date' => $transaction_date,
+                                'status' => 'success',
+                            ]);
     
-                        //     $payoutSetting = config('payment-gateway');
-                        //     $domain = $_SERVER['HTTP_HOST'];
+                            $payoutSetting = config('payment-gateway');
+                            $domain = $_SERVER['HTTP_HOST'];
     
-                        //     $selectedPayout = $payoutSetting['robotec'];
-                        //     $vCode = md5($pending->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
-                        //     $token = Str::random(32);
+                            $selectedPayout = $payoutSetting['robotec'];
+                            $vCode = md5($pending->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
+                            $token = Str::random(32);
     
-                        //     $params = [
-                        //         'merchant_id' => $pending->merchant_id,
-                        //         'client_id' => $pending->client_id,
-                        //         'transaction_type' => $pending->transaction_type,
-                        //         'from_wallet' => $pending->from_wallet,
-                        //         'to_wallet' => $pending->to_wallet,
-                        //         'txID' => $pending->txID,
-                        //         'block_time' => $pending->block_time,
-                        //         'transfer_amount' => $pending->txn_amount,
-                        //         'transaction_number' => $pending->transaction_number,
-                        //         'amount' => $pending->amount,
-                        //         'status' => $pending->status,
-                        //         'payment_method' => $pending->payment_method,
-                        //         'created_at' => $pending->created_at,
-                        //         'description' => $pending->description,
-                        //         'vCode' => $vCode,
-                        //         'token' => $token,
-                        //     ];
+                            $params = [
+                                'merchant_id' => $pending->merchant_id,
+                                'client_id' => $pending->client_id,
+                                'transaction_type' => $pending->transaction_type,
+                                'from_wallet' => $pending->from_wallet,
+                                'to_wallet' => $pending->to_wallet,
+                                'txID' => $pending->txID,
+                                'block_time' => $pending->block_time,
+                                'transfer_amount' => $pending->txn_amount,
+                                'transaction_number' => $pending->transaction_number,
+                                'amount' => $pending->amount,
+                                'status' => $pending->status,
+                                'payment_method' => $pending->payment_method,
+                                'created_at' => $pending->created_at,
+                                'description' => $pending->description,
+                                'vCode' => $vCode,
+                                'token' => $token,
+                            ];
     
-                        //     $callBackUrl = $selectedPayout['paymentUrl'] . $selectedPayout['callBackUrl'];
-                        //     $response = Http::post($callBackUrl, $params);
+                            $callBackUrl = $selectedPayout['paymentUrl'] . $selectedPayout['callBackUrl'];
+                            $response = Http::post($callBackUrl, $params);
                             
-                        // } else {
-                        //     Log::debug('txid', $transaction['transaction_id']);
-                        // }
+                        } else {
+                            Log::debug('txid', $transaction['transaction_id']);
+                        }
                     }
                 }
                 // $transactions = collect($decodedTransactions['transaction']['data']);
