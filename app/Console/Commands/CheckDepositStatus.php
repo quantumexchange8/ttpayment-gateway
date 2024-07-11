@@ -77,7 +77,6 @@ class CheckDepositStatus extends Command
                             ]);
     
                             $payoutSetting = config('payment-gateway');
-                            $domain = $_SERVER['HTTP_HOST'];
     
                             $selectedPayout = $payoutSetting['robotec'];
                             $vCode = md5($pending->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
