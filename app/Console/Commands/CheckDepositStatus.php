@@ -70,11 +70,19 @@ class CheckDepositStatus extends Command
                 if (!empty($transactionInfo['data'])) {
                     foreach ($transactionInfo['data'] as $transactions) {
 
-                        Log::debug('All transactions', $transactions);
+                        if (is_array($transactions)) {
+                            Log::debug('All transactions', $transactions);
+                        } else {
+                            Log::warning('Unexpected All transactions type', ['type' => gettype($transactions)]);
+                        }
 
                         foreach ($transactions as $transaction) {
 
-                            Log::debug('looped transaction', $transaction);
+                            if (is_array($transaction)) {
+                                Log::debug('looped transaction', $transaction);
+                            } else {
+                                Log::warning('Unexpected transactionInfo type', ['type' => gettype($transaction)]);
+                            }
 
                             if (Transaction::where('txID', $transaction['transaction_id'])->doesntExist()) {
                                 Log::debug('Transaction ID does not exist');
