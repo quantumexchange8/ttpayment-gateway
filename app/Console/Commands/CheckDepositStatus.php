@@ -102,7 +102,12 @@ class CheckDepositStatus extends Command
 
                     foreach($transactions as $transaction) {
                         Log::debug('data', $transaction);
-                        Log::debug('data test', $transaction->transaction_id);
+                        // Log::debug('data test', ['transaction_id' => $transaction['transaction_id']]);
+
+                        foreach($transaction as $data) {
+                            Log::debug('data arrow', $data->transaction_id);
+                            Log::debug('data bracket', $data['transaction_id']);
+                        }
                     }
                 }
                 // $transactions = collect($decodedTransactions['transaction']['data']);
