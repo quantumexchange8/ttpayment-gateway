@@ -61,7 +61,11 @@ class CheckDepositStatus extends Command
                 // $transactionInfo = $response->json()->toArray();
                 $transactionInfo = $response->json();
 
-                Log::debug('CallBack Api transactionInfo', ['transaction' => $transactionInfo]);
+                if (is_array($transactionInfo)) {
+                    Log::debug('CallBack Api transactionInfo', ['transaction' => $transactionInfo]);
+                } else {
+                    Log::warning('Unexpected transactionInfo type', ['type' => gettype($transactionInfo)]);
+                }
 
                 if (!empty($transactionInfo['data'])) {
                     foreach ($transactionInfo['data'] as $transactions) {
