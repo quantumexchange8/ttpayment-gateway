@@ -58,7 +58,8 @@ class CheckDepositStatus extends Command
             ]);
             
             if ($response->successful()) {
-                $transactionInfo = $response->json()->toArray();
+                // $transactionInfo = $response->json()->toArray();
+                $transactionInfo = $response->json();
 
                 Log::debug('CallBack Api transactionInfo', ['transaction' => $transactionInfo]);
 
