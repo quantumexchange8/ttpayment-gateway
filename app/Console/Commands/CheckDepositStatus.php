@@ -106,49 +106,10 @@ class CheckDepositStatus extends Command
                             $response = Http::post($callBackUrl, $params);
                             
                         } else {
-                            Log::debug('txid', $transaction['transaction_id']);
+                            Log::debug('txid', ['transaction_id' => $transaction['transaction_id']]);
                         }
                     }
                 }
-                // $transactions = collect($decodedTransactions['transaction']['data']);
-
-                // foreach($transactions as $transaction) {
-                //     Log::debug('data', $transaction);
-
-                // }
-
-                // if (is_array($transactionInfo)) {
-                //     Log::debug('CallBack Api transactionInfo', ['transaction' => $transactionInfo]);
-                // } else {
-                //     Log::warning('Unexpected transactionInfo type', ['type' => gettype($transactionInfo)]);
-                // }
-
-                // if (!empty($transactionInfo['data'])) {
-                //     foreach ($transactionInfo['data'] as $transactions) {
-
-                //         if (is_array($transactions)) {
-                //             Log::debug('All transactions', $transactions);
-                //         } else {
-                //             Log::warning('Unexpected All transactions type', ['type' => gettype($transactions)]);
-                //         }
-
-                //         foreach ($transactions as $transaction) {
-
-                //             if (is_array($transaction)) {
-                //                 Log::debug('looped transaction', $transaction);
-                //             } else {
-                //                 Log::warning('Unexpected transactionInfo type', ['type' => gettype($transaction)]);
-                //             }
-
-                //             
-                //         }
-
-                //     }
-                // } else {
-                //     Log::debug('No transaction data found.');
-                // }
-
-                // Log::debug('CallBack Api transactionInfo', ['transaction' => $transactionInfo->toArray()]);
             } else {
                 return response()->json(['error' => 'Failed to fetch transactions']);
             }
