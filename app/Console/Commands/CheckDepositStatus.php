@@ -42,35 +42,8 @@ class CheckDepositStatus extends Command
 
             $tokenAddress = $pending->to_wallet;
             $createdAt = $pending->created_at;
-            // $min_timeStamp = strtotime($createdAt->getTimestampMs());
             $min_timeStamp = $createdAt->timestamp * 1000;
-
-            // $response = Http::withHeaders([
-            //     'accept' => 'application/json',
-            // ])->get('https://nile.trongrid.io/v1/accounts/' . $tokenAddress .'/transactions/trc20', [
-            //     'min_timestamp' => $min_timeStamp,
-            //     'only_to' => true,
-            // ]);
-
-            // $arrayVar = [
-            //     "transaction_id" =>
-            //         "94f3bd775a514008c88937825302518b1fb6ab05754590d6e73553589c8f6818",
-            //     "token_info" => [
-            //         "symbol" => "USDT",
-            //         "address" => "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj",
-            //         "decimals" => 6,
-            //         "name" => "Tether USD",
-            //     ],
-            //     "block_timestamp" => 1720594269000,
-            //     "from" => "TVwuQiDEre9nTNvEYnFmPuNFW6QAhGv85p",
-            //     "to" => "TETwcWyNtNkXPdf69Kgzzt38oD1KbT74rM",
-            //     "type" => "Transfer",
-            //     "value" => "20000000",
-            // ];
-
-            // foreach($arrayVar as $val) {
-            //     dd($val['transaction_id']);
-            // }
+            $testing = 'testing';
                        
             $response = Http::get('https://nile.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
                 'min_timestamp' => $min_timeStamp,
