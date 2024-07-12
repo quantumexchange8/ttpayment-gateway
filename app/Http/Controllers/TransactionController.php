@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Merchant;
+use App\Models\MerchantEmail;
 use App\Models\Token;
 use App\Models\Transaction;
 use App\Notifications\TransactionNotification;
@@ -189,12 +190,14 @@ class TransactionController extends Controller
                 ]);
     
             }
-            
+            // dd($merchant);
+            // $email = MerchantEmail::where('merchant_id', $merchant->merchantEmail)->where('main', 1)->get();
+            Notification::route('mail', 'payment@currenttech.pro')->notify(new TransactionNotification($merchant->name, $transactionData['transaction_id'], $transactionData['from'], $transactionData['to'], $amount, $transaction->status));
             
             // foreach ($merchant->merchantEmail as $emails) {
             //     $email = $emails->email;
 
-            //     Notification::route('mail', $email)->notify(new TransactionNotification($merchant->name, $transactionData['transaction_id'], $transactionData['from'], $transactionData['to'], $amount, $transaction->status));
+            //     
             // }
 
 
