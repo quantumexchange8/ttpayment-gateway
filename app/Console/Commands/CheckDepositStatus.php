@@ -45,15 +45,15 @@ class CheckDepositStatus extends Command
             $min_timeStamp = $createdAt->timestamp * 1000;
             $testing = 'testing';
                        
-            // $response = Http::get('https://nile.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
-            //     'min_timestamp' => $min_timeStamp,
-            //     'only_to' => true,
-            // ]);
-
-            $response = Http::get('https://api.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
+            $response = Http::get('https://nile.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
                 'min_timestamp' => $min_timeStamp,
                 'only_to' => true,
             ]);
+
+            // $response = Http::get('https://api.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
+            //     'min_timestamp' => $min_timeStamp,
+            //     'only_to' => true,
+            // ]);
             
             if ($response->successful()) {
                 $transactionInfo = $response->json();
