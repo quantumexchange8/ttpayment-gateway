@@ -34,8 +34,8 @@ class TransactionController extends Controller
         $transactionNo = $request->query('orderNumber'); // TXN00000001 or no need
         $merchantId = $request->query('merchantId'); // MID000001
         $merchantClientId = $request->query('userId'); // Merchant client user id
-        $merchantClientName = $request->query('name'); // Merchant client user id
-        $merchantClientEmail = $request->query('email'); // Merchant client user id
+        $merchantClientName = $request->query('userName'); // Merchant client user id
+        $merchantClientEmail = $request->query('userEmail'); // Merchant client user id
         $tt_txn = RunningNumberService::getID('transaction');
 
         if (empty($request->all())) {
