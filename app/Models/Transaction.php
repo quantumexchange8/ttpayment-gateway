@@ -13,6 +13,8 @@ class Transaction extends Model
     protected $fillable = [
         'merchant_id',
         'client_id',
+        'client_name',
+        'client_email',
         'transaction_type',
         'from_wallet',
         'to_wallet',
