@@ -97,7 +97,7 @@ class CheckDepositStatus extends Command
                                 'block_time' => $pending->block_time,
                                 'transfer_amount' => $pending->txn_amount,
                                 'transaction_number' => $pending->transaction_number,
-                                'amount' => $pending->amount,
+                                // 'amount' => $pending->amount,
                                 'status' => $pending->status,
                                 'payment_method' => $pending->payment_method,
                                 'created_at' => $pending->created_at,

@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import { QRCode } from 'react-qrcode-logo';
 // import TronComponent from "@/Components/TronComponent";
 
-export default function Payment({ merchant, transaction, expirationTime, amount, tokenAddress, storedToken }) {
+export default function Payment({ merchant, transaction, expirationTime, tokenAddress, storedToken }) {
 
     const getRandomIndex = () => Math.floor(Math.random() * merchant.merchant_wallet_address.length);
     
@@ -158,9 +158,9 @@ export default function Payment({ merchant, transaction, expirationTime, amount,
                 QR Code refreshing in: {timeRemaining} seconds
             </div> */}
 
-            <div className="text-base font-semibold">
+            {/* <div className="text-base font-semibold">
                 Amount (USDT): $ <span>{amount}</span>
-            </div>
+            </div> */}
             
             <div className="text-base font-semibold">
                 Time Remaing: {expiredTimeRemainings}

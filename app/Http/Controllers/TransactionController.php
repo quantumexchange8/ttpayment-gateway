@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Merchant;
-use App\Models\MerchantEmail;
 use App\Models\Token;
 use App\Models\Transaction;
 use App\Notifications\TransactionNotification;
@@ -31,7 +30,7 @@ class TransactionController extends Controller
         $datas = $request->all();
         Log::debug('Incoming Data', $datas);
 
-        $amount = $request->query('amount') / 1000000;
+        // $amount = $request->query('amount') / 1000000;
         $transactionNo = $request->query('orderNumber'); // TXN00000001 or no need
         $merchantId = $request->query('merchantId'); // MID000001
         $merchantClientId = $request->query('userId'); // Merchant client user id
@@ -102,7 +101,7 @@ class TransactionController extends Controller
                             'transaction_type' => 'deposit',
                             'payment_method' => 'manual',
                             'status' => 'pending',
-                            'amount' => $amount,
+                            // 'amount' => $amount,
                             'transaction_number' => $transactionNo,
                             'tt_txn' => $tt_txn,
                             'to_wallet' => $tokenAddress,
@@ -129,7 +128,7 @@ class TransactionController extends Controller
                             'transaction_type' => 'deposit',
                             'payment_method' => 'auto',
                             'status' => 'pending',
-                            'amount' => $amount,
+                            // 'amount' => $amount,
                             'transaction_number' => $transactionNo,
                             'tt_txn' => $tt_txn,
                             'to_wallet' => $tokenAddress,
@@ -137,7 +136,7 @@ class TransactionController extends Controller
         
                         return Inertia::render('Auto/ValidPayment', [
                             'merchant' => $merchant,
-                            'amount' => $amount,
+                            // 'amount' => $amount,
                             'expirationTime' => $expirationTime,
                             'transaction' => $transaction,
                             'tokenAddress' => $tokenAddress,
@@ -167,37 +166,21 @@ class TransactionController extends Controller
             $amount = $transactionData['value'] / 1000000 ;
             Log::debug('get value', $transactionData);
             
-            if ($transaction->amount != $amount) {
-                $transaction->update([
-                    'txID' => $transactionData['transaction_id'],
-                    'block_time' => $transactionData['block_timestamp'],
-                    'from_wallet' => $transactionData['from'],
-                    'to_wallet' => $transactionData['to'],
-                    'txn_amount' => $amount,
-                    'status' => 'pending',
-                    'transaction_date' => $nowDateTime
-                ]);
-    
-            } else {
-                $transaction->update([
-                    'txID' => $transactionData['transaction_id'],
-                    'block_time' => $transactionData['block_timestamp'],
-                    'from_wallet' => $transactionData['from'],
-                    'to_wallet' => $transactionData['to'],
-                    'txn_amount' => $amount,
-                    'status' => 'success',
-                    'transaction_date' => $nowDateTime
-                ]);
-    
-            }
-            // dd($merchant);
-            // $email = MerchantEmail::where('merchant_id', $merchant->merchantEmail)->where('main', 1)->get();
-            Notification::route('mail', 'payment@currenttech.pro')->notify(new TransactionNotification($merchant->name, $transactionData['transaction_id'], $transactionData['from'], $transactionData['to'], $amount, $transaction->status));
+            $transaction->update([
+                'txID' => $transactionData['transaction_id'],
+                'block_time' => $transactionData['block_timestamp'],
+                'from_wallet' => $transactionData['from'],
+                'to_wallet' => $transactionData['to'],
+                'txn_amount' => $amount,
+                'status' => 'success',
+                'transaction_date' => $nowDateTime
+            ]);
+            
             
             // foreach ($merchant->merchantEmail as $emails) {
             //     $email = $emails->email;
 
-            //     
+            //     Notification::route('mail', $email)->notify(new TransactionNotification($merchant->name, $transactionData['transaction_id'], $transactionData['from'], $transactionData['to'], $amount, $transaction->status));
             // }
 
 
@@ -285,7 +268,7 @@ class TransactionController extends Controller
         $token = $request->storedToken;
         $transactionVal = Transaction::find($transaction); 
         
-        $amount = $transactionVal->amount;
+        // $amount = $transactionVal->amount;
         $payoutSetting = config('payment-gateway');
         $domain = $_SERVER['HTTP_HOST'];
 
@@ -307,7 +290,7 @@ class TransactionController extends Controller
             'block_time' => $transactionVal->block_time,
             'transfer_amount' => $transactionVal->txn_amount,
             'transaction_number' => $transactionVal->transaction_number,
-            'amount' => $transactionVal->amount,
+            // 'amount' => $transactionVal->amount,
             'status' => $transactionVal->status,
             'payment_method' => $transactionVal->payment_method,
             'created_at' => $transactionVal->created_at,
@@ -358,9 +341,8 @@ class TransactionController extends Controller
             'merchant_id' => $transction->merchant_id,
             'client_id' => $transction->client_id,
             'transaction_type' => $transction->transaction_type,
-            'amount' => $transction->amount,
+            // 'amount' => $transction->amount,
             'transaction_number' => $transction->transaction_number,
-            'amount' => $transction->amount,
             'status' => 'pending',
             'payment_method' => $transction->payment_method,
             'created_at' => $transction->created_at,
