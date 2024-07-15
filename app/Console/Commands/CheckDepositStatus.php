@@ -83,7 +83,7 @@ class CheckDepositStatus extends Command
     
                             $payoutSetting = config('payment-gateway');
     
-                            $selectedPayout = $payoutSetting['robotec'];
+                            $selectedPayout = $payoutSetting['robotec_live'];
                             $vCode = md5($pending->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
                             $token = Str::random(32);
     
