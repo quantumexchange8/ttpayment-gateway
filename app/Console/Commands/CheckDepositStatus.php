@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\PayoutConfig;
 use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -43,7 +44,7 @@ class CheckDepositStatus extends Command
             $tokenAddress = $pending->to_wallet;
             $createdAt = $pending->created_at;
             $min_timeStamp = $createdAt->timestamp * 1000;
-            $testing = 'testing';
+            $merchant = $pending->merchant_id;
                        
             $response = Http::get('https://nile.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
                 'min_timestamp' => $min_timeStamp,
@@ -81,10 +82,11 @@ class CheckDepositStatus extends Command
                                 'status' => 'success',
                             ]);
     
-                            $payoutSetting = config('payment-gateway');
+                            $payoutSetting = PayoutConfig::where('merchant_id', $merchant)->first();
+                            // $payoutSetting = config('payment-gateway');
     
-                            $selectedPayout = $payoutSetting['robotec_live'];
-                            $vCode = md5($pending->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
+                            // $selectedPayout = $payoutSetting['robotec_live'];
+                            $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchantId);
                             $token = Str::random(32);
     
                             $params = [
@@ -106,7 +108,7 @@ class CheckDepositStatus extends Command
                                 'token' => $token,
                             ];
     
-                            $callBackUrl = $selectedPayout['paymentUrl'] . $selectedPayout['callBackUrl'];
+                            $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
                             $response = Http::post($callBackUrl, $params);
                             
                         } else {

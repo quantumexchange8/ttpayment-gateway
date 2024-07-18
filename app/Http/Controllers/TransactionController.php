@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Merchant;
+use App\Models\PayoutConfig;
 use App\Models\Token;
 use App\Models\Transaction;
 use App\Notifications\TransactionNotification;
@@ -259,6 +260,7 @@ class TransactionController extends Controller
         return Inertia::render('Manual/ReturnPayment', [
             'transaction' => $transaction,
             'storedToken' => $storedToken,
+            'merchant_id' => $transactionDetails->merchant_id,
         ]);
     }
 
@@ -266,14 +268,16 @@ class TransactionController extends Controller
     {
         $transaction = $request->transaction;
         $token = $request->storedToken;
+        $merchant = $request->merchant_id;
         $transactionVal = Transaction::find($transaction); 
         
         // $amount = $transactionVal->amount;
-        $payoutSetting = config('payment-gateway');
-        $domain = $_SERVER['HTTP_HOST'];
-        $selectedPayout = $payoutSetting['robotec_live'];
+        // $payoutSetting = config('payment-gateway');
+        // $domain = $_SERVER['HTTP_HOST'];
+        
+        $payoutSetting = PayoutConfig::where('merchant_id', $merchant)->first();
 
-        $vCode = md5($transactionVal->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
+        $vCode = md5($transactionVal->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
 
         $params = [
             'merchant_id' => $transactionVal->merchant_id,
@@ -296,8 +300,8 @@ class TransactionController extends Controller
 
         $request->session()->flush();
 
-        $url = $selectedPayout['paymentUrl'] . $selectedPayout['returnUrl'];
-        $callBackUrl = $selectedPayout['paymentUrl'] . $selectedPayout['callBackUrl'];
+        $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
+        $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
         
         
         $response = Http::post($callBackUrl, $params);
@@ -349,12 +353,13 @@ class TransactionController extends Controller
         
         $request->session()->flush();
 
-        $payoutSetting = config('payment-gateway');
-        $domain = $_SERVER['HTTP_HOST'];
+        // $payoutSetting = config('payment-gateway');
+        // $domain = $_SERVER['HTTP_HOST'];
+        // $selectedPayout = $payoutSetting['robotec_live'];
 
-        $selectedPayout = $payoutSetting['robotec_live'];
-
-        $url = $selectedPayout['paymentUrl'] . $selectedPayout['returnUrl'];
+        $payoutSetting = PayoutConfig::where('merchant_id', $transction->merchant_id)->first();
+        
+        $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
         $redirectUrl = $url . "?" .  http_build_query($params);
 
         return Inertia::location($redirectUrl);
