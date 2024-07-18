@@ -82,11 +82,11 @@ class CheckDepositStatus extends Command
                                 'status' => 'success',
                             ]);
     
-                            $payoutSetting = PayoutConfig::where('merchant_id', $merchant)->first();
+                            $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->first();
                             // $payoutSetting = config('payment-gateway');
     
                             // $selectedPayout = $payoutSetting['robotec_live'];
-                            $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchantId);
+                            $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
                             $token = Str::random(32);
     
                             $params = [
