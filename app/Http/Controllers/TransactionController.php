@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
+use Ladumor\OneSignal\OneSignal;
 
 class TransactionController extends Controller
 {
@@ -44,7 +45,7 @@ class TransactionController extends Controller
            
             return Inertia::render('Welcome');
 
-        } else if ($request->merchantId && $request->merchantId && $request->orderNumber && $request->userId && $request->vCode) {
+        } else if ($request->merchantId && $request->orderNumber && $request->userId && $request->vCode) {
             $sessionToken = $request->query('token');
 
             if (!$request->session()->has('session_token')) {
@@ -160,9 +161,17 @@ class TransactionController extends Controller
         Log::debug('capture txid', $datas);
 
         $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress', 'merchantEmail', 'merchantWallet'])->first();
-        $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
 
         if ($merchant->deposit_type == 1) {
+
+            // $devices = OneSignal::getDevices();
+
+            // $fields = [];
+            // foreach ($devices['players'] as $player) {
+            //     $fields['include_player_ids'][] = $player['id'];
+            // }
+
+
             $transactionData = $request->latestTransaction;
             $transaction = Transaction::find($request->transaction);
             $nowDateTime = Carbon::now();
@@ -177,25 +186,39 @@ class TransactionController extends Controller
                 'to_wallet' => $transactionData['to'],
                 'txn_amount' => $amount,
                 'fee' => $fee,
-                'total_amount' => $amount - $fee,
+                'total_amount' => $amount ,
                 'status' => 'success',
                 'transaction_date' => $nowDateTime
             ]);
 
             if ($transaction->transaction_type === 'deposit') {
+                $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
 
                 $merchantWallet->gross_deposit += $transaction->txn_amount;
                 $merchantWallet->net_deposit += $transaction->total_amount;
                 $merchantWallet->deposit_fee += $transaction->fee;
+                $merchantWallet->total_deposit += $transaction->txn_amount;
+                $merchantWallet->total_fee += $transaction->fee;
 
                 $merchantWallet->save();
+
+                // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
+
             } else {
+                $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
 
                 $merchantWallet->gross_withdrawal += $transaction->txn_amount;
                 $merchantWallet->net_withdrawal += $transaction->total_amount;
                 $merchantWallet->withdrawal_fee += $transaction->fee;
+
+                $merchantWallet->save();
+
+                // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
+
             }
-            
+
+            // OneSignal::sendPush($fields, $message);
+
             // foreach ($merchant->merchantEmail as $emails) {
             //     $email = $emails->email;
 

@@ -20,6 +20,7 @@ class Transaction extends Model
         'to_wallet',
         'txID',
         'amount',
+        'total_amount',
         'fee',
         'tt_txn',
         'transaction_number',
