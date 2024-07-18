@@ -271,12 +271,7 @@ class TransactionController extends Controller
         // $amount = $transactionVal->amount;
         $payoutSetting = config('payment-gateway');
         $domain = $_SERVER['HTTP_HOST'];
-
-        if ($domain === 'login.metafinx.com') {
-            $selectedPayout = $payoutSetting['live'];
-        } else {
-            $selectedPayout = $payoutSetting['robotec'];
-        }
+        $selectedPayout = $payoutSetting['robotec_live'];
 
         $vCode = md5($transactionVal->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
 
@@ -357,11 +352,7 @@ class TransactionController extends Controller
         $payoutSetting = config('payment-gateway');
         $domain = $_SERVER['HTTP_HOST'];
 
-        if ($domain === 'login.metafinx.com') {
-            $selectedPayout = $payoutSetting['live'];
-        } else {
-            $selectedPayout = $payoutSetting['robotec'];
-        }
+        $selectedPayout = $payoutSetting['robotec_live'];
 
         $url = $selectedPayout['paymentUrl'] . $selectedPayout['returnUrl'];
         $redirectUrl = $url . "?" .  http_build_query($params);

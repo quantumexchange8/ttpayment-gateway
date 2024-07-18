@@ -158,7 +158,7 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
                 QR Code refreshing in: {timeRemaining} seconds
             </div> */}
 
-            {/* <div className="text-base font-semibold">
+            {/*<div className="text-base font-semibold">
                 Amount (USDT): $ <span>{amount}</span>
             </div> */}
             

@@ -22,6 +22,13 @@ return [
         'returnUrl' => 'deposit_return',
         'callBackUrl' => 'deposit_callback',
     ],
+    'robotec_live' => [
+        'paymentUrl' => 'https://app.robotec.live/',
+        'appId' => 'robotec',
+        'merchantId' => '1',
+        'returnUrl' => 'deposit_return',
+        'callBackUrl' => 'deposit_callback',
+    ],
     'live' => [
         'paymentUrl' => 'https://metafinx-member.currenttech.pro/',
         'appId' => 'metafinx',
