@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Merchant;
+use App\Models\MerchantWallet;
 use App\Models\PayoutConfig;
 use App\Models\Token;
 use App\Models\Transaction;
@@ -158,13 +159,15 @@ class TransactionController extends Controller
         $datas = $request->all();
         Log::debug('capture txid', $datas);
 
-        $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress', 'merchantEmail'])->first();
-        
+        $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress', 'merchantEmail', 'merchantWallet'])->first();
+        $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
+
         if ($merchant->deposit_type == 1) {
             $transactionData = $request->latestTransaction;
             $transaction = Transaction::find($request->transaction);
             $nowDateTime = Carbon::now();
             $amount = $transactionData['value'] / 1000000 ;
+            $fee = 0.00;
             Log::debug('get value', $transactionData);
             
             $transaction->update([
@@ -173,10 +176,25 @@ class TransactionController extends Controller
                 'from_wallet' => $transactionData['from'],
                 'to_wallet' => $transactionData['to'],
                 'txn_amount' => $amount,
+                'fee' => $fee,
+                'total_amount' => $amount - $fee,
                 'status' => 'success',
                 'transaction_date' => $nowDateTime
             ]);
-            
+
+            if ($transaction->transaction_type === 'deposit') {
+
+                $merchantWallet->gross_deposit += $transaction->txn_amount;
+                $merchantWallet->net_deposit += $transaction->total_amount;
+                $merchantWallet->deposit_fee += $transaction->fee;
+
+                $merchantWallet->save();
+            } else {
+
+                $merchantWallet->gross_withdrawal += $transaction->txn_amount;
+                $merchantWallet->net_withdrawal += $transaction->total_amount;
+                $merchantWallet->withdrawal_fee += $transaction->fee;
+            }
             
             // foreach ($merchant->merchantEmail as $emails) {
             //     $email = $emails->email;

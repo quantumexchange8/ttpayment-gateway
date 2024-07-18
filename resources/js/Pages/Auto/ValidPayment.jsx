@@ -154,13 +154,7 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
             <div className="text-base font-semibold text-center ">
                 Wallet Address : <span className=" font-bold" >{tokenAddress}</span>
             </div>
-            {/* <div className="text-base font-semibold">
-                QR Code refreshing in: {timeRemaining} seconds
-            </div> */}
-
-            {/*<div className="text-base font-semibold">
-                Amount (USDT): $ <span>{amount}</span>
-            </div> */}
+            
             
             <div className="text-base font-semibold">
                 Time Remaing: {expiredTimeRemainings}

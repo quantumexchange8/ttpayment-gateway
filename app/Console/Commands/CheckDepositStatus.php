@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\MerchantWallet;
 use App\Models\PayoutConfig;
 use App\Models\Transaction;
 use Carbon\Carbon;
@@ -45,6 +46,7 @@ class CheckDepositStatus extends Command
             $createdAt = $pending->created_at;
             $min_timeStamp = $createdAt->timestamp * 1000;
             $merchant = $pending->merchant_id;
+            $merchantWallet = MerchantWallet::where('merchant_id', $merchant)->first();
                        
             $response = Http::get('https://nile.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
                 'min_timestamp' => $min_timeStamp,
@@ -72,15 +74,26 @@ class CheckDepositStatus extends Command
                             $txnAmount = $transaction['value'] / 1000000;
                             $timestamp = $transaction['block_timestamp'] / 1000;
                             $transaction_date = Carbon::createFromTimestamp($timestamp)->setTimezone('GMT+8');
-    
+                            $fee = 0.00;
+
                             $pending->update([
                                 'from_wallet' => $transaction['from'],
                                 'txID' => $transaction['transaction_id'],
                                 'block_time' => $transaction['block_timestamp'],
                                 'txn_amount' => $txnAmount,
+                                'fee' => $fee,
+                                'total_amount' => $txnAmount - $fee,
                                 'transaction_date' => $transaction_date,
                                 'status' => 'success',
                             ]);
+
+                            if ($pending->transaction_type === 'deposit') {
+                                $merchantWallet->gross_deposit += $txnAmount;
+                                $merchantWallet->net_deposit += $pending->total_amount;
+                                $merchantWallet->deposit_fee += $pending->fee;
+
+                                $merchantWallet->save();
+                            }
     
                             $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->first();
                             // $payoutSetting = config('payment-gateway');
