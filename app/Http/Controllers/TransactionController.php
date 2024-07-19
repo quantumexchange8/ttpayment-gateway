@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Merchant;
 use App\Models\MerchantWallet;
+use App\Models\PayoutConfig;
 use App\Models\Token;
 use App\Models\Transaction;
 use App\Notifications\TransactionNotification;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
+use Ladumor\OneSignal\OneSignal;
 
 class TransactionController extends Controller
 {
@@ -43,7 +45,7 @@ class TransactionController extends Controller
            
             return Inertia::render('Welcome');
 
-        } else if ($request->merchantId && $request->merchantId && $request->orderNumber && $request->userId && $request->vCode) {
+        } else if ($request->merchantId && $request->orderNumber && $request->userId && $request->vCode) {
             $sessionToken = $request->query('token');
 
             if (!$request->session()->has('session_token')) {
@@ -158,13 +160,23 @@ class TransactionController extends Controller
         $datas = $request->all();
         Log::debug('capture txid', $datas);
 
-        $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress', 'merchantEmail'])->first();
-        
+        $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress', 'merchantEmail', 'merchantWallet'])->first();
+
         if ($merchant->deposit_type == 1) {
+
+            // $devices = OneSignal::getDevices();
+
+            // $fields = [];
+            // foreach ($devices['players'] as $player) {
+            //     $fields['include_player_ids'][] = $player['id'];
+            // }
+
+
             $transactionData = $request->latestTransaction;
             $transaction = Transaction::find($request->transaction);
             $nowDateTime = Carbon::now();
             $amount = $transactionData['value'] / 1000000 ;
+            $fee = 0.00;
             Log::debug('get value', $transactionData);
             
             $transaction->update([
@@ -173,6 +185,8 @@ class TransactionController extends Controller
                 'from_wallet' => $transactionData['from'],
                 'to_wallet' => $transactionData['to'],
                 'txn_amount' => $amount,
+                'fee' => $fee,
+                'total_amount' => $amount ,
                 'status' => 'success',
                 'transaction_date' => $nowDateTime
             ]);
@@ -190,7 +204,7 @@ class TransactionController extends Controller
 
                 // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
 
-            }  else {
+            } else {
                 $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
 
                 $merchantWallet->gross_withdrawal += $transaction->txn_amount;
@@ -202,8 +216,9 @@ class TransactionController extends Controller
                 // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
 
             }
-            
-            
+
+            // OneSignal::sendPush($fields, $message);
+
             // foreach ($merchant->merchantEmail as $emails) {
             //     $email = $emails->email;
 
@@ -286,6 +301,7 @@ class TransactionController extends Controller
         return Inertia::render('Manual/ReturnPayment', [
             'transaction' => $transaction,
             'storedToken' => $storedToken,
+            'merchant_id' => $transactionDetails->merchant_id,
         ]);
     }
 
@@ -293,14 +309,16 @@ class TransactionController extends Controller
     {
         $transaction = $request->transaction;
         $token = $request->storedToken;
+        $merchant = $request->merchant_id;
         $transactionVal = Transaction::find($transaction); 
         
         // $amount = $transactionVal->amount;
-        $payoutSetting = config('payment-gateway');
-        $domain = $_SERVER['HTTP_HOST'];
-        $selectedPayout = $payoutSetting['robotec_live'];
+        // $payoutSetting = config('payment-gateway');
+        // $domain = $_SERVER['HTTP_HOST'];
+        
+        $payoutSetting = PayoutConfig::where('merchant_id', $merchant)->first();
 
-        $vCode = md5($transactionVal->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
+        $vCode = md5($transactionVal->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
 
         $params = [
             'merchant_id' => $transactionVal->merchant_id,
@@ -323,8 +341,8 @@ class TransactionController extends Controller
 
         $request->session()->flush();
 
-        $url = $selectedPayout['paymentUrl'] . $selectedPayout['returnUrl'];
-        $callBackUrl = $selectedPayout['paymentUrl'] . $selectedPayout['callBackUrl'];
+        $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
+        $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
         
         
         $response = Http::post($callBackUrl, $params);
@@ -376,12 +394,13 @@ class TransactionController extends Controller
         
         $request->session()->flush();
 
-        $payoutSetting = config('payment-gateway');
-        $domain = $_SERVER['HTTP_HOST'];
+        // $payoutSetting = config('payment-gateway');
+        // $domain = $_SERVER['HTTP_HOST'];
+        // $selectedPayout = $payoutSetting['robotec_live'];
 
-        $selectedPayout = $payoutSetting['robotec_live'];
-
-        $url = $selectedPayout['paymentUrl'] . $selectedPayout['returnUrl'];
+        $payoutSetting = PayoutConfig::where('merchant_id', $transction->merchant_id)->first();
+        
+        $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
         $redirectUrl = $url . "?" .  http_build_query($params);
 
         return Inertia::location($redirectUrl);

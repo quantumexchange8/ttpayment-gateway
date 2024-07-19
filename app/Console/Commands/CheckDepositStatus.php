@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\MerchantWallet;
+use App\Models\PayoutConfig;
 use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -74,12 +75,15 @@ class CheckDepositStatus extends Command
                             $txnAmount = $transaction['value'] / 1000000;
                             $timestamp = $transaction['block_timestamp'] / 1000;
                             $transaction_date = Carbon::createFromTimestamp($timestamp)->setTimezone('GMT+8');
-    
+                            $fee = 0.00;
+
                             $pending->update([
                                 'from_wallet' => $transaction['from'],
                                 'txID' => $transaction['transaction_id'],
                                 'block_time' => $transaction['block_timestamp'],
                                 'txn_amount' => $txnAmount,
+                                'fee' => $fee,
+                                'total_amount' => $txnAmount - $fee,
                                 'transaction_date' => $transaction_date,
                                 'status' => 'success',
                             ]);
@@ -92,10 +96,11 @@ class CheckDepositStatus extends Command
                                 $merchantWallet->save();
                             }
     
-                            $payoutSetting = config('payment-gateway');
+                            $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->first();
+                            // $payoutSetting = config('payment-gateway');
     
-                            $selectedPayout = $payoutSetting['robotec_live'];
-                            $vCode = md5($pending->transaction_number . $selectedPayout['appId'] . $selectedPayout['merchantId']);
+                            // $selectedPayout = $payoutSetting['robotec_live'];
+                            $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
                             $token = Str::random(32);
     
                             $params = [
@@ -108,6 +113,7 @@ class CheckDepositStatus extends Command
                                 'block_time' => $pending->block_time,
                                 'transfer_amount' => $pending->txn_amount,
                                 'transaction_number' => $pending->transaction_number,
+                                // 'amount' => $pending->amount,
                                 'status' => $pending->status,
                                 'payment_method' => $pending->payment_method,
                                 'created_at' => $pending->created_at,
@@ -116,7 +122,7 @@ class CheckDepositStatus extends Command
                                 'token' => $token,
                             ];
     
-                            $callBackUrl = $selectedPayout['paymentUrl'] . $selectedPayout['callBackUrl'];
+                            $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
                             $response = Http::post($callBackUrl, $params);
                             
                         } else {
