@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\MerchantWallet;
 use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -44,7 +45,8 @@ class CheckDepositStatus extends Command
             $tokenAddress = $pending->to_wallet;
             $createdAt = $pending->created_at;
             $min_timeStamp = $createdAt->timestamp * 1000;
-            $testing = 'testing';
+            $merchant = $pending->merchant_id;
+            $merchantWallet = MerchantWallet::where('merchant_id', $merchant)->first();
                        
             // $response = Http::get('https://nile.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
             //     'min_timestamp' => $min_timeStamp,
@@ -81,6 +83,14 @@ class CheckDepositStatus extends Command
                                 'transaction_date' => $transaction_date,
                                 'status' => 'success',
                             ]);
+
+                            if ($pending->transaction_type === 'deposit') {
+                                $merchantWallet->gross_deposit += $txnAmount;
+                                $merchantWallet->net_deposit += $pending->total_amount;
+                                $merchantWallet->deposit_fee += $pending->fee;
+
+                                $merchantWallet->save();
+                            }
     
                             $payoutSetting = config('payment-gateway');
     

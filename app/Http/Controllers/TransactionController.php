@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Merchant;
+use App\Models\MerchantWallet;
 use App\Models\Token;
 use App\Models\Transaction;
 use App\Notifications\TransactionNotification;
@@ -175,6 +176,32 @@ class TransactionController extends Controller
                 'status' => 'success',
                 'transaction_date' => $nowDateTime
             ]);
+
+            if ($transaction->transaction_type === 'deposit') {
+                $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
+
+                $merchantWallet->gross_deposit += $transaction->txn_amount;
+                $merchantWallet->net_deposit += $transaction->total_amount;
+                $merchantWallet->deposit_fee += $transaction->fee;
+                $merchantWallet->total_deposit += $transaction->txn_amount;
+                $merchantWallet->total_fee += $transaction->fee;
+
+                $merchantWallet->save();
+
+                // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
+
+            }  else {
+                $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
+
+                $merchantWallet->gross_withdrawal += $transaction->txn_amount;
+                $merchantWallet->net_withdrawal += $transaction->total_amount;
+                $merchantWallet->withdrawal_fee += $transaction->fee;
+
+                $merchantWallet->save();
+
+                // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
+
+            }
             
             
             // foreach ($merchant->merchantEmail as $emails) {
