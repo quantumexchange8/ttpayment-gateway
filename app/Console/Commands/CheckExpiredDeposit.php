@@ -29,9 +29,10 @@ class CheckExpiredDeposit extends Command
     public function handle()
     {
         $pendingPayment = Transaction::where('status', 'pending')
-        ->whereNull('txID')
-        ->where('created_at', '<', Carbon::now()->subDay()) // Transactions created more than 24 hours ago
-        ->get();
+                ->where('transaction_type', 'deposit')
+                ->whereNull('txID')
+                ->where('created_at', '<', Carbon::now()->subDay()) // Transactions created more than 24 hours ago
+                ->get();
         
         foreach ($pendingPayment as $pending) {
             Log::debug('expired status', ['transaction' => $pending->toArray()]);
