@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\MerchantWallet;
 use App\Models\PayoutConfig;
+use App\Models\RateProfile;
 use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -89,11 +90,16 @@ class CheckDepositStatus extends Command
                             ]);
 
                             if ($pending->transaction_type === 'deposit') {
-                                $merchantWallet->gross_deposit += $txnAmount;
-                                $merchantWallet->net_deposit += $pending->total_amount;
-                                $merchantWallet->deposit_fee += $pending->fee;
+                                $merchantWallet = MerchantWallet::where('merchant_id', $merchant)->first();
+                                $merchantRateProfile = RateProfile::find($merchant);
 
-                                $merchantWallet->save();
+                                $merchantWallet->gross_deposit += $txnAmount; //gross amount 
+                                $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
+                                $merchantWallet->total_fee += $gross_fee; // total fee
+                                $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
+                                
+                                $merchantWallet->total_deposit += $txnAmount;
+
                             }
     
                             $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->first();

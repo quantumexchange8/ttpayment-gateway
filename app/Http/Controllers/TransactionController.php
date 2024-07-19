@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Merchant;
 use App\Models\MerchantWallet;
 use App\Models\PayoutConfig;
+use App\Models\RateProfile;
 use App\Models\Token;
 use App\Models\Transaction;
 use App\Notifications\TransactionNotification;
@@ -191,14 +192,32 @@ class TransactionController extends Controller
                 'transaction_date' => $nowDateTime
             ]);
 
+            // $transactionDetails = [
+            //     'txID' => $transactionData['transaction_id'],
+            //     'block_time' => $transactionData['block_timestamp'],
+            //     'from_wallet' => $transactionData['from'],
+            //     'to_wallet' => $transactionData['to'],
+            //     'txn_amount' => $amount,
+            //     'fee' => $fee,
+            //     'total_amount' => $amount,
+            //     'status' => 'success',
+            //     'transaction_date' => $nowDateTime,
+            //     'merchant_id' => $merchant->id,
+            // ];
+
+            // $response = Http::post('http://127.0.0.1:8000/api/onesignal', $transactionDetails);
+            // Log::debug($response);
+
             if ($transaction->transaction_type === 'deposit') {
                 $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
+                $merchantRateProfile = RateProfile::find($request->merchantId);
 
-                $merchantWallet->gross_deposit += $transaction->txn_amount;
-                $merchantWallet->net_deposit += $transaction->total_amount;
-                $merchantWallet->deposit_fee += $transaction->fee;
+                $merchantWallet->gross_deposit += $transaction->txn_amount; //gross amount 
+                $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
+                $merchantWallet->total_fee += $gross_fee; // total fee
+                $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
+                
                 $merchantWallet->total_deposit += $transaction->txn_amount;
-                $merchantWallet->total_fee += $transaction->fee;
 
                 $merchantWallet->save();
 
@@ -207,11 +226,11 @@ class TransactionController extends Controller
             } else {
                 $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
 
-                $merchantWallet->gross_withdrawal += $transaction->txn_amount;
-                $merchantWallet->net_withdrawal += $transaction->total_amount;
-                $merchantWallet->withdrawal_fee += $transaction->fee;
+                // $merchantWallet->gross_withdrawal += $transaction->txn_amount;
+                // $merchantWallet->net_withdrawal += $transaction->total_amount;
+                // $merchantWallet->withdrawal_fee += $transaction->fee;
 
-                $merchantWallet->save();
+                // $merchantWallet->save();
 
                 // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
 
