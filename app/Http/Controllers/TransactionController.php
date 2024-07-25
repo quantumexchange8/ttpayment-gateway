@@ -8,6 +8,7 @@ use App\Models\PayoutConfig;
 use App\Models\RateProfile;
 use App\Models\Token;
 use App\Models\Transaction;
+use App\Models\TransactionLog;
 use App\Notifications\TransactionNotification;
 use App\Services\RunningNumberService;
 use Carbon\Carbon;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 use Ladumor\OneSignal\OneSignal;
@@ -41,12 +43,28 @@ class TransactionController extends Controller
         $merchantClientName = $request->query('userName'); // Merchant client user id
         $merchantClientEmail = $request->query('userEmail'); // Merchant client user id
         $tt_txn = RunningNumberService::getID('transaction');
+        $verifyToken = $request->query('token');
 
         if (empty($request->all())) {
            
             return Inertia::render('Welcome');
 
         } else if ($request->merchantId && $request->orderNumber && $request->userId && $request->vCode) {
+            
+            $validateToken = TransactionLog::where('token', $verifyToken)->first();
+
+            if ($validateToken) {
+                return Inertia::render('Welcome');
+            } else {
+                $Log = TransactionLog::create([
+                    'merchant_id' => $merchantId,
+                    'client_id' => $merchantClientId,
+                    'client_name' => $merchantClientName,
+                    'transaction_number' => $transactionNo,
+                    'token' => $verifyToken,
+                ]);
+            }
+            
             $sessionToken = $request->query('token');
 
             if (!$request->session()->has('session_token')) {
@@ -210,7 +228,7 @@ class TransactionController extends Controller
 
             if ($transaction->transaction_type === 'deposit') {
                 $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
-                $merchantRateProfile = RateProfile::find($request->merchantId);
+                $merchantRateProfile = RateProfile::find($merchant->rate_id);
 
                 $merchantWallet->gross_deposit += $transaction->txn_amount; //gross amount 
                 $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
@@ -220,6 +238,10 @@ class TransactionController extends Controller
                 $merchantWallet->total_deposit += $transaction->txn_amount;
 
                 $merchantWallet->save();
+
+                // $onesignal_params = [
+                //     'merchant_id' => $merchant->id
+                // ];
 
                 // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
 
