@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Merchant;
 use App\Models\MerchantWallet;
 use App\Models\PayoutConfig;
+use App\Models\RateProfile;
 use App\Models\Token;
 use App\Models\Transaction;
+use App\Models\TransactionLog;
 use App\Notifications\TransactionNotification;
 use App\Services\RunningNumberService;
 use Carbon\Carbon;
@@ -17,6 +19,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 use Ladumor\OneSignal\OneSignal;
@@ -40,12 +43,28 @@ class TransactionController extends Controller
         $merchantClientName = $request->query('userName'); // Merchant client user id
         $merchantClientEmail = $request->query('userEmail'); // Merchant client user id
         $tt_txn = RunningNumberService::getID('transaction');
+        $verifyToken = $request->query('token');
 
         if (empty($request->all())) {
            
             return Inertia::render('Welcome');
 
         } else if ($request->merchantId && $request->orderNumber && $request->userId && $request->vCode) {
+            
+            $validateToken = TransactionLog::where('token', $verifyToken)->first();
+
+            if ($validateToken) {
+                return Inertia::render('Welcome');
+            } else {
+                $Log = TransactionLog::create([
+                    'merchant_id' => $merchantId,
+                    'client_id' => $merchantClientId,
+                    'client_name' => $merchantClientName,
+                    'transaction_number' => $transactionNo,
+                    'token' => $verifyToken,
+                ]);
+            }
+            
             $sessionToken = $request->query('token');
 
             if (!$request->session()->has('session_token')) {
@@ -191,27 +210,49 @@ class TransactionController extends Controller
                 'transaction_date' => $nowDateTime
             ]);
 
+            // $transactionDetails = [
+            //     'txID' => $transactionData['transaction_id'],
+            //     'block_time' => $transactionData['block_timestamp'],
+            //     'from_wallet' => $transactionData['from'],
+            //     'to_wallet' => $transactionData['to'],
+            //     'txn_amount' => $amount,
+            //     'fee' => $fee,
+            //     'total_amount' => $amount,
+            //     'status' => 'success',
+            //     'transaction_date' => $nowDateTime,
+            //     'merchant_id' => $merchant->id,
+            // ];
+
+            // $response = Http::post('http://127.0.0.1:8000/api/onesignal', $transactionDetails);
+            // Log::debug($response);
+
             if ($transaction->transaction_type === 'deposit') {
                 $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
+                $merchantRateProfile = RateProfile::find($merchant->rate_id);
 
-                $merchantWallet->gross_deposit += $transaction->txn_amount;
-                $merchantWallet->net_deposit += $transaction->total_amount;
-                $merchantWallet->deposit_fee += $transaction->fee;
+                $merchantWallet->gross_deposit += $transaction->txn_amount; //gross amount 
+                $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
+                $merchantWallet->total_fee += $gross_fee; // total fee
+                $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
+                
                 $merchantWallet->total_deposit += $transaction->txn_amount;
-                $merchantWallet->total_fee += $transaction->fee;
 
                 $merchantWallet->save();
+
+                // $onesignal_params = [
+                //     'merchant_id' => $merchant->id
+                // ];
 
                 // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
 
             } else {
                 $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
 
-                $merchantWallet->gross_withdrawal += $transaction->txn_amount;
-                $merchantWallet->net_withdrawal += $transaction->total_amount;
-                $merchantWallet->withdrawal_fee += $transaction->fee;
+                // $merchantWallet->gross_withdrawal += $transaction->txn_amount;
+                // $merchantWallet->net_withdrawal += $transaction->total_amount;
+                // $merchantWallet->withdrawal_fee += $transaction->fee;
 
-                $merchantWallet->save();
+                // $merchantWallet->save();
 
                 // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
 
