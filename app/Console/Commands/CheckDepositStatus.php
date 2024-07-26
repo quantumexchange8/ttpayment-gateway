@@ -100,6 +100,8 @@ class CheckDepositStatus extends Command
                                 
                                 $merchantWallet->total_deposit += $txnAmount;
 
+                                $merchantWallet->save();
+
                             }
     
                             $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->first();
