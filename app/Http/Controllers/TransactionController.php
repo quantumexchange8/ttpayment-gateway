@@ -53,9 +53,7 @@ class TransactionController extends Controller
             
             $validateToken = TransactionLog::where('token', $verifyToken)->first();
 
-            if ($validateToken) {
-                return Inertia::render('Welcome');
-            } else {
+            if (empty($validateToken)) {
                 $Log = TransactionLog::create([
                     'merchant_id' => $merchantId,
                     'client_id' => $merchantClientId,
@@ -63,6 +61,8 @@ class TransactionController extends Controller
                     'transaction_number' => $transactionNo,
                     'token' => $verifyToken,
                 ]);
+            } else {
+                return Inertia::render('Welcome');
             }
             
             $sessionToken = $request->query('token');
