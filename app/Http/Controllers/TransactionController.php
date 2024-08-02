@@ -82,7 +82,7 @@ class TransactionController extends Controller
                 }
             }
 
-            $findTxnNo = Transaction::where('transaction_number', $transactionNo)->first();
+            $findTxnNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->first();
             $findtt_txn = Transaction::where('tt_txn', $tt_txn)->first();
             
             if ($findTxnNo || $findtt_txn) {
