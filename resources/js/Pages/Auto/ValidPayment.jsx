@@ -145,6 +145,14 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
     return (
         <div className="w-full flex flex-col items-center justify-center gap-5 min-h-screen">
 
+            <div className="flex flex-col items-center gap-2">
+                <div className="text-lg font-bold">
+                    TT Payment Gateway
+                </div>
+                <div className="text-sm font-medium">
+                    Please note that ensure you are sending <span className="font-bold">USDT TRC 20</span> only.
+                </div>
+            </div>
             <div>
                 <QRCode 
                 value={tokenAddress} 

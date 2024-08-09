@@ -42,8 +42,10 @@ class TransactionController extends Controller
         $merchantClientId = $request->query('userId'); // Merchant client user id
         $merchantClientName = $request->query('userName'); // Merchant client user id
         $merchantClientEmail = $request->query('userEmail'); // Merchant client user id
+        $vCode = $request->query('vCode'); // Merchant client user id
         $tt_txn = RunningNumberService::getID('transaction');
         $verifyToken = $request->query('token');
+        $appId = PayoutConfig::where('merchant_id', $merchantId)->first();
 
         if (empty($request->all())) {
            
@@ -53,9 +55,8 @@ class TransactionController extends Controller
             
             $validateToken = TransactionLog::where('token', $verifyToken)->first();
 
-            if ($validateToken) {
-                return Inertia::render('Welcome');
-            } else {
+            //check validate token
+            if (empty($validateToken)) {
                 $Log = TransactionLog::create([
                     'merchant_id' => $merchantId,
                     'client_id' => $merchantClientId,
@@ -63,8 +64,18 @@ class TransactionController extends Controller
                     'transaction_number' => $transactionNo,
                     'token' => $verifyToken,
                 ]);
+            } else {
+                return Inertia::render('Welcome');
             }
-            
+
+            // Check vCode
+            $validateVCode = md5($appId->appId . $transactionNo . $merchantId . $appId->secret_key);
+
+            if ($validateVCode != $vCode) {
+                return Inertia::render('Welcome');
+            }
+
+            // check session and store session token
             $sessionToken = $request->query('token');
 
             if (!$request->session()->has('session_token')) {
@@ -82,7 +93,8 @@ class TransactionController extends Controller
                 }
             }
 
-            $findTxnNo = Transaction::where('transaction_number', $transactionNo)->first();
+            // check transaction number for both crm and gateway exist or not
+            $findTxnNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->first();
             $findtt_txn = Transaction::where('tt_txn', $tt_txn)->first();
             
             if ($findTxnNo || $findtt_txn) {
@@ -103,6 +115,7 @@ class TransactionController extends Controller
                     $expirationTime = Carbon::parse($request->session()->get('payment_expiration_time'));
                 }
     
+                // check timimg for the session
                 if ($now >= $expirationTime) {
                     return Inertia::render('Timeout');
                 } else {
@@ -183,14 +196,6 @@ class TransactionController extends Controller
 
         if ($merchant->deposit_type == 1) {
 
-            // $devices = OneSignal::getDevices();
-
-            // $fields = [];
-            // foreach ($devices['players'] as $player) {
-            //     $fields['include_player_ids'][] = $player['id'];
-            // }
-
-
             $transactionData = $request->latestTransaction;
             $transaction = Transaction::find($request->transaction);
             $nowDateTime = Carbon::now();
@@ -209,23 +214,7 @@ class TransactionController extends Controller
                 'status' => 'success',
                 'transaction_date' => $nowDateTime
             ]);
-
-            // $transactionDetails = [
-            //     'txID' => $transactionData['transaction_id'],
-            //     'block_time' => $transactionData['block_timestamp'],
-            //     'from_wallet' => $transactionData['from'],
-            //     'to_wallet' => $transactionData['to'],
-            //     'txn_amount' => $amount,
-            //     'fee' => $fee,
-            //     'total_amount' => $amount,
-            //     'status' => 'success',
-            //     'transaction_date' => $nowDateTime,
-            //     'merchant_id' => $merchant->id,
-            // ];
-
-            // $response = Http::post('http://127.0.0.1:8000/api/onesignal', $transactionDetails);
-            // Log::debug($response);
-
+            
             if ($transaction->transaction_type === 'deposit') {
                 $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
                 $merchantRateProfile = RateProfile::find($merchant->rate_id);
@@ -238,12 +227,6 @@ class TransactionController extends Controller
                 $merchantWallet->total_deposit += $transaction->txn_amount;
 
                 $merchantWallet->save();
-
-                // $onesignal_params = [
-                //     'merchant_id' => $merchant->id
-                // ];
-
-                // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
 
             } else {
                 $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
@@ -388,8 +371,6 @@ class TransactionController extends Controller
         
         $response = Http::post($callBackUrl, $params);
         Log::debug($response);
-
-        // return $this->postRedirect($callBackUrl, $params);
 
         if ($response['success']) {
             $params['response_status'] = 'success';
