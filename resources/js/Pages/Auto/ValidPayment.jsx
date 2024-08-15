@@ -146,11 +146,14 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
         <div className="w-full flex flex-col items-center justify-center gap-5 min-h-screen">
 
             <div className="flex flex-col items-center gap-2">
+                <div className="w-28">
+                    <img src="/assets/trc20.svg" alt="" />
+                </div>
                 <div className="text-lg font-bold">
                     TT Payment Gateway
                 </div>
                 <div className="text-sm font-medium">
-                    Please note that ensure you are sending <span className="font-bold">USDT TRC 20</span> only.
+                    請確保您發送的代幣是<span className="font-bold">USDT TRC 20</span>.
                 </div>
             </div>
             <div>
@@ -160,12 +163,12 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
                 />
             </div>
             <div className="text-base font-semibold text-center ">
-                Wallet Address : <span className=" font-bold" >{tokenAddress}</span>
+                收款地址 : <span className=" font-bold" >{tokenAddress}</span>
             </div>
             
             
             <div className="text-base font-semibold">
-                Time Remaing: {expiredTimeRemainings}
+                剩余时间: {expiredTimeRemainings}
             </div>
 
             <form onSubmit={submit}>
@@ -174,7 +177,7 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
                     variant="danger"
                     size="sm"
                 >
-                    Cancel
+                    取消
                 </Button>
             </form>
         </div>

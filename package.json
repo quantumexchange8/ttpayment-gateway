@@ -21,6 +21,7 @@
     },
     "dependencies": {
         "dayjs": "^1.11.11",
+        "react-i18next": "^15.0.1",
         "react-qrcode-logo": "^3.0.0"
     }
 }
