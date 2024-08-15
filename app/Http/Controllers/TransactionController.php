@@ -46,6 +46,7 @@ class TransactionController extends Controller
         $tt_txn = RunningNumberService::getID('transaction');
         $verifyToken = $request->query('token');
         $appId = PayoutConfig::where('merchant_id', $merchantId)->first();
+        $lang = $request->query('language'); // Language ? yes : default en
 
         if (empty($request->all())) {
            
@@ -176,6 +177,7 @@ class TransactionController extends Controller
                             'transaction' => $transaction,
                             'tokenAddress' => $tokenAddress,
                             'storedToken' => $storedToken,
+                            'lang' => $lang,
                         ]);
                     }
     

@@ -6,8 +6,11 @@ import { useForm } from "@inertiajs/react";
 import React, { useState, useEffect } from "react";
 import { QRCode } from 'react-qrcode-logo';
 // import TronComponent from "@/Components/TronComponent";
+import { useTranslation } from 'react-i18next';
+import { CopyIcon } from "@/Components/Brand";
+import Tooltip from "@/Components/Tooltip";
 
-export default function Payment({ merchant, transaction, expirationTime, tokenAddress, storedToken }) {
+export default function Payment({ merchant, transaction, expirationTime, tokenAddress, storedToken, lang }) {
 
     const getRandomIndex = () => Math.floor(Math.random() * merchant.merchant_wallet_address.length);
     
@@ -20,6 +23,16 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
     const [transDetails, setLatestTransaction] = useState({});
     const [expiredTimeRemainings, setExpiredTimeRemainings] = useState('');
     const [submitType, setSubmitType] = useState(false);
+    const { t, i18n } = useTranslation();
+    const [tooltipText, setTooltipText] = useState('copy');
+
+    useEffect(() => {
+        if (lang === 'en' || lang === 'cn') {
+          i18n.changeLanguage(lang);
+        } else {
+          i18n.changeLanguage('en');
+        }
+    }, [lang, i18n]);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         txid: '', // Initial form state
@@ -73,8 +86,8 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
         // let pollingInterval;
         const fetchTransactions = async () => {
             try {
-                const url = `https://api.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
-                // const url = `https://nile.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
+                // const url = `https://api.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
+                const url = `https://nile.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
                 const response = await fetch(url);
                 const result = await response.json();
                 console.log(result);
@@ -142,8 +155,23 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
         })
     }
 
+    const handleCopy = (tokenAddress) => {
+        const textToCopy = tokenAddress;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            setTooltipText('Copied!');
+            console.log('Copied to clipboard:', textToCopy);
+
+            // Revert tooltip text back to 'copy' after 2 seconds
+            setTimeout(() => {
+                setTooltipText('copy');
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+        });
+    };
+
     return (
-        <div className="w-full flex flex-col items-center justify-center gap-5 min-h-screen">
+        <div className="w-full flex flex-col items-center justify-center gap-5 min-h-[80vh]">
 
             <div className="flex flex-col items-center gap-2">
                 <div className="w-28">
@@ -153,7 +181,9 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
                     TT Payment Gateway
                 </div>
                 <div className="text-sm font-medium">
-                    請確保您發送的代幣是<span className="font-bold">USDT TRC 20</span>.
+                    
+                    {/* 請確保您發送的代幣是<span className="font-bold">USDT TRC 20</span>. */}
+                    {t('please_ensure')}<span className="font-bold">USDT TRC 20</span>.
                 </div>
             </div>
             <div>
@@ -162,13 +192,23 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
                 fgColor="#000000"
                 />
             </div>
-            <div className="text-base font-semibold text-center ">
-                收款地址 : <span className=" font-bold" >{tokenAddress}</span>
+            <div className="text-base font-semibold text-center flex flex-col">
+                <div>{t('wallet_address')}:</div> 
+                <div className=" font-bold flex items-center gap-1" >
+                    <div>
+                        {tokenAddress}
+                    </div>
+                    <div onClick={() => handleCopy(tokenAddress)}>
+                        <Tooltip text={tooltipText}>
+                            <CopyIcon />
+                        </Tooltip>
+                    </div>
+                </div>
             </div>
-            
+            TVwuQiDEre9nTNvEYnFmPuNFW6QAhGv85p
             
             <div className="text-base font-semibold">
-                剩余时间: {expiredTimeRemainings}
+                {t('time_remaining')}: {expiredTimeRemainings}
             </div>
 
             <form onSubmit={submit}>
@@ -177,7 +217,7 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
                     variant="danger"
                     size="sm"
                 >
-                    取消
+                    {t('cancel')}
                 </Button>
             </form>
         </div>

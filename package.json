@@ -21,6 +21,8 @@
     },
     "dependencies": {
         "dayjs": "^1.11.11",
+        "i18next-http-backend": "^2.5.2",
+        "prop-types": "^15.8.1",
         "react-i18next": "^15.0.1",
         "react-qrcode-logo": "^3.0.0"
     }
