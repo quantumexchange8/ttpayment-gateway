@@ -50,15 +50,15 @@ class CheckDepositStatus extends Command
             $merchant = $pending->merchant_id;
             $merchantWallet = MerchantWallet::where('merchant_id', $merchant)->first();
                        
-            $response = Http::get('https://nile.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
-                'min_timestamp' => $min_timeStamp,
-                'only_to' => true,
-            ]);
-
-            // $response = Http::get('https://api.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
+            // $response = Http::get('https://nile.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
             //     'min_timestamp' => $min_timeStamp,
             //     'only_to' => true,
             // ]);
+
+            $response = Http::get('https://api.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
+                'min_timestamp' => $min_timeStamp,
+                'only_to' => true,
+            ]);
             
             if ($response->successful()) {
                 $transactionInfo = $response->json();
