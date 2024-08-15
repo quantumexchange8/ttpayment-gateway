@@ -27,7 +27,7 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
     const [tooltipText, setTooltipText] = useState('copy');
 
     useEffect(() => {
-        if (lang === 'en' || lang === 'cn') {
+        if (lang === 'en' || lang === 'cn' || lang === 'tw') {
           i18n.changeLanguage(lang);
         } else {
           i18n.changeLanguage('en');
