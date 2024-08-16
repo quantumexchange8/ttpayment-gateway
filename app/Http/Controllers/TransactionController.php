@@ -205,42 +205,52 @@ class TransactionController extends Controller
             $fee = 0.00;
             Log::debug('get value', $transactionData);
             
-            $transaction->update([
-                'txID' => $transactionData['transaction_id'],
-                'block_time' => $transactionData['block_timestamp'],
-                'from_wallet' => $transactionData['from'],
-                'to_wallet' => $transactionData['to'],
-                'txn_amount' => $amount,
-                'fee' => $fee,
-                'total_amount' => $amount ,
-                'status' => 'success',
-                'transaction_date' => $nowDateTime
-            ]);
-            
-            if ($transaction->transaction_type === 'deposit') {
-                $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
-                $merchantRateProfile = RateProfile::find($merchant->rate_id);
+            $check = Transaction::where('txID', $transactionData['transaction_id'])->first();
 
-                $merchantWallet->gross_deposit += $transaction->txn_amount; //gross amount 
-                $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
-                $merchantWallet->total_fee += $gross_fee; // total fee
-                $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
+            if (empty($check)) {
+                $transaction->update([
+                    'txID' => $transactionData['transaction_id'],
+                    'block_time' => $transactionData['block_timestamp'],
+                    'from_wallet' => $transactionData['from'],
+                    'to_wallet' => $transactionData['to'],
+                    'txn_amount' => $amount,
+                    'fee' => $fee,
+                    'total_amount' => $amount ,
+                    'status' => 'success',
+                    'transaction_date' => $nowDateTime
+                ]);
                 
-                $merchantWallet->total_deposit += $transaction->txn_amount;
-
-                $merchantWallet->save();
-
+                if ($transaction->transaction_type === 'deposit') {
+                    $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
+                    $merchantRateProfile = RateProfile::find($merchant->rate_id);
+    
+                    $merchantWallet->gross_deposit += $transaction->txn_amount; //gross amount 
+                    $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
+                    $merchantWallet->total_fee += $gross_fee; // total fee
+                    $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
+                    
+                    $merchantWallet->total_deposit += $transaction->txn_amount;
+    
+                    $merchantWallet->save();
+    
+                } else {
+                    $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
+    
+                    // $merchantWallet->gross_withdrawal += $transaction->txn_amount;
+                    // $merchantWallet->net_withdrawal += $transaction->total_amount;
+                    // $merchantWallet->withdrawal_fee += $transaction->fee;
+    
+                    // $merchantWallet->save();
+    
+                    // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
+    
+                }
             } else {
-                $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
-
-                // $merchantWallet->gross_withdrawal += $transaction->txn_amount;
-                // $merchantWallet->net_withdrawal += $transaction->total_amount;
-                // $merchantWallet->withdrawal_fee += $transaction->fee;
-
-                // $merchantWallet->save();
-
-                // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
-
+                Log::debug('txID repeated', $transactionData['transaction_id']);
+                $transaction->update([
+                    'status' => 'pending',
+                    'transaction_date' => $nowDateTime
+                ]);
             }
 
             // OneSignal::sendPush($fields, $message);
