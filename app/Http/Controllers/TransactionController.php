@@ -247,7 +247,7 @@ class TransactionController extends Controller
                 }
 
             } else {
-                Log::debug('txID repeated', $transactionData['transaction_id']);
+                Log::debug('txID repeated');
                 $transaction->update([
                     'status' => 'pending',
                     'transaction_date' => $nowDateTime
