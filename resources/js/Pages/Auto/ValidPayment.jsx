@@ -205,7 +205,6 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
                     </div>
                 </div>
             </div>
-            TVwuQiDEre9nTNvEYnFmPuNFW6QAhGv85p
             
             <div className="text-base font-semibold">
                 {t('time_remaining')}: {expiredTimeRemainings}
