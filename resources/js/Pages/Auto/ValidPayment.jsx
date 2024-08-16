@@ -78,7 +78,7 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
             }
         };
 
-        const pollingInterval = setInterval(fetchBlock, 5000);
+        const pollingInterval = setInterval(fetchBlock, 2000);
         return () => clearInterval(pollingInterval);
     }, []);
 
