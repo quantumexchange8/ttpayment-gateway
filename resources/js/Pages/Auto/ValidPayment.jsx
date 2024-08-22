@@ -10,8 +10,8 @@ import { useTranslation } from 'react-i18next';
 import { CopyIcon } from "@/Components/Brand";
 import Tooltip from "@/Components/Tooltip";
 
-export default function Payment({ merchant, transaction, expirationTime, tokenAddress, storedToken, lang }) {
-
+export default function Payment({ merchant, transaction, expirationTime, tokenAddress, storedToken, lang, referer }) {
+    
     const getRandomIndex = () => Math.floor(Math.random() * merchant.merchant_wallet_address.length);
     
     const [currentWalletIndex, setCurrentWalletIndex] = useState(getRandomIndex());
@@ -41,6 +41,7 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
         merchantId: merchant.id,
         submitType: '',
         storedToken: storedToken,
+        referer: referer
     });
 
     useEffect(() => {
@@ -103,7 +104,7 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
                         post('/updateTransaction', {
                             preserveScroll: true,
                             onSuccess: () => {
-                                window.location.href = `/returnTransaction?transaction_id=${transaction.id}&token=${storedToken}&merchant_id=${merchant.id}`;
+                                window.location.href = `/returnTransaction?transaction_id=${transaction.id}&token=${storedToken}&merchant_id=${merchant.id}&referral=${referer}`;
                             }
                         });
                         clearInterval(pollingInterval);

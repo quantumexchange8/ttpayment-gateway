@@ -104,7 +104,7 @@ class CheckDepositStatus extends Command
 
                             }
     
-                            $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->first();
+                            $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
                             // $payoutSetting = config('payment-gateway');
     
                             // $selectedPayout = $payoutSetting['robotec_live'];

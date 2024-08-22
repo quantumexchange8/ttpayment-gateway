@@ -31,5 +31,6 @@ class Transaction extends Model
         'handle_by',
         'block_time',
         'txn_amount',
+        'origin_domain',
     ];
 }
