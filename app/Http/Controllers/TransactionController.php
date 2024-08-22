@@ -326,6 +326,7 @@ class TransactionController extends Controller
         $storedToken = $request->token;
         $transactionDetails = Transaction::find($transaction);
         $merchant = Merchant::where('id', $transactionDetails->merchant_id)->with(['merchantWalletAddress.walletAddress', 'merchantEmail'])->first();
+        $referer = $request->referer;
 
         // $arrEmails = [];
         // foreach ($merchant->merchantEmail as $emails) {
@@ -345,6 +346,7 @@ class TransactionController extends Controller
             'transaction' => $transaction,
             'storedToken' => $storedToken,
             'merchant_id' => $transactionDetails->merchant_id,
+            'referer' => $referer,
         ]);
     }
 
@@ -362,8 +364,9 @@ class TransactionController extends Controller
         
         $payoutSetting = PayoutConfig::where('merchant_id', $merchant)->first();
         $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $referer);
-
+        
         $vCode = md5($transactionVal->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+        
 
         $params = [
             'merchant_id' => $transactionVal->merchant_id,
