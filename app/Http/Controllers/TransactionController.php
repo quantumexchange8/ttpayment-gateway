@@ -36,6 +36,8 @@ class TransactionController extends Controller
         $datas = $request->all();
         Log::debug('Incoming Data', $datas);
 
+        $referer = request()->headers->get('referer');
+
         // $amount = $request->query('amount') / 1000000;
         $transactionNo = $request->query('orderNumber'); // TXN00000001 or no need
         $merchantId = $request->query('merchantId'); // MID000001
@@ -64,6 +66,7 @@ class TransactionController extends Controller
                     'client_name' => $merchantClientName,
                     'transaction_number' => $transactionNo,
                     'token' => $verifyToken,
+                    'origin_domain' => $referer,
                 ]);
             } else {
                 return Inertia::render('Welcome');
@@ -141,6 +144,7 @@ class TransactionController extends Controller
                             'transaction_number' => $transactionNo,
                             'tt_txn' => $tt_txn,
                             'to_wallet' => $tokenAddress,
+                            'origin_domain' => $referer,
                         ]);
     
                         return Inertia::render('Manual/ValidPayment', [
@@ -168,6 +172,7 @@ class TransactionController extends Controller
                             'transaction_number' => $transactionNo,
                             'tt_txn' => $tt_txn,
                             'to_wallet' => $tokenAddress,
+                            'origin_domain' => $referer,
                         ]);
         
                         return Inertia::render('Auto/ValidPayment', [
@@ -178,6 +183,7 @@ class TransactionController extends Controller
                             'tokenAddress' => $tokenAddress,
                             'storedToken' => $storedToken,
                             'lang' => $lang,
+                            'referer' => $referer,
                         ]);
                     }
     
@@ -219,7 +225,6 @@ class TransactionController extends Controller
                     'status' => 'success',
                     'transaction_date' => $nowDateTime
                 ]);
-                
                 if ($transaction->transaction_type === 'deposit') {
                     $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
                     $merchantRateProfile = RateProfile::find($merchant->rate_id);
@@ -319,6 +324,7 @@ class TransactionController extends Controller
         $storedToken = $request->token;
         $transactionDetails = Transaction::find($transaction);
         $merchant = Merchant::where('id', $transactionDetails->merchant_id)->with(['merchantWalletAddress.walletAddress', 'merchantEmail'])->first();
+        $referer = $request->referer;
 
         // $arrEmails = [];
         // foreach ($merchant->merchantEmail as $emails) {
@@ -338,6 +344,7 @@ class TransactionController extends Controller
             'transaction' => $transaction,
             'storedToken' => $storedToken,
             'merchant_id' => $transactionDetails->merchant_id,
+            'referer' => $referer,
         ]);
     }
 
@@ -347,14 +354,17 @@ class TransactionController extends Controller
         $token = $request->storedToken;
         $merchant = $request->merchant_id;
         $transactionVal = Transaction::find($transaction); 
-        
+        $referer = $request->referer;
+
         // $amount = $transactionVal->amount;
         // $payoutSetting = config('payment-gateway');
         // $domain = $_SERVER['HTTP_HOST'];
         
         $payoutSetting = PayoutConfig::where('merchant_id', $merchant)->first();
-
-        $vCode = md5($transactionVal->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
+        $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $referer);
+        
+        $vCode = md5($transactionVal->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+        
 
         $params = [
             'merchant_id' => $transactionVal->merchant_id,
@@ -377,8 +387,8 @@ class TransactionController extends Controller
 
         $request->session()->flush();
 
-        $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
-        $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
+        $url = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->returnUrl;
+        $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
         
         
         $response = Http::post($callBackUrl, $params);
@@ -432,9 +442,12 @@ class TransactionController extends Controller
         // $domain = $_SERVER['HTTP_HOST'];
         // $selectedPayout = $payoutSetting['robotec_live'];
 
-        $payoutSetting = PayoutConfig::where('merchant_id', $transction->merchant_id)->first();
-        
-        $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
+        $referer = $request->referer;
+
+        $payoutSetting = PayoutConfig::where('merchant_id', $transction->merchant_id)->get();
+        $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $referer);
+
+        $url = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->returnUrl;
         $redirectUrl = $url . "?" .  http_build_query($params);
 
         return Inertia::location($redirectUrl);

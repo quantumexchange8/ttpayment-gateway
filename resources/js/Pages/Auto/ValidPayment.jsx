@@ -10,8 +10,8 @@ import { useTranslation } from 'react-i18next';
 import { CopyIcon } from "@/Components/Brand";
 import Tooltip from "@/Components/Tooltip";
 
-export default function Payment({ merchant, transaction, expirationTime, tokenAddress, storedToken, lang }) {
-
+export default function Payment({ merchant, transaction, expirationTime, tokenAddress, storedToken, lang, referer }) {
+    
     const getRandomIndex = () => Math.floor(Math.random() * merchant.merchant_wallet_address.length);
     
     const [currentWalletIndex, setCurrentWalletIndex] = useState(getRandomIndex());
@@ -41,6 +41,7 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
         merchantId: merchant.id,
         submitType: '',
         storedToken: storedToken,
+        referer: referer
     });
 
     useEffect(() => {
@@ -68,8 +69,8 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
     useEffect(() => {
         const fetchBlock = async () => {
             try {
-                const response = await fetch('https://api.trongrid.io/walletsolidity/getnowblock');
-                // const response = await fetch('https://nile.trongrid.io/walletsolidity/getnowblock');
+                // const response = await fetch('https://api.trongrid.io/walletsolidity/getnowblock');
+                const response = await fetch('https://nile.trongrid.io/walletsolidity/getnowblock');
                 const result = await response.json();
                 const timestamp = result.block_header.raw_data.timestamp;
                 setBlockTimestamp(timestamp);
@@ -86,8 +87,8 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
         // let pollingInterval;
         const fetchTransactions = async () => {
             try {
-                const url = `https://api.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
-                // const url = `https://nile.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
+                // const url = `https://api.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
+                const url = `https://nile.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
                 const response = await fetch(url);
                 const result = await response.json();
                 console.log(result);
@@ -103,7 +104,7 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
                         post('/updateTransaction', {
                             preserveScroll: true,
                             onSuccess: () => {
-                                window.location.href = `/returnTransaction?transaction_id=${transaction.id}&token=${storedToken}&merchant_id=${merchant.id}`;
+                                window.location.href = `/returnTransaction?transaction_id=${transaction.id}&token=${storedToken}&merchant_id=${merchant.id}&referer=${referer}`;
                             }
                         });
                         clearInterval(pollingInterval);

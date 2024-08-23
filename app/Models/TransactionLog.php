@@ -15,5 +15,6 @@ class TransactionLog extends Model
         'client_name',
         'transaction_number',
         'token',
+        'origin_domain'
     ];
 }

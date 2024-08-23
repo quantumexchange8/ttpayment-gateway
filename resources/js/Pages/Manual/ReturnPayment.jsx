@@ -3,7 +3,7 @@ import Button from "@/Components/Button";
 import { useForm } from "@inertiajs/react";
 import React, { useState } from "react";
 
-export default function ReturnPayment({ datas, total_amount, transaction, storedToken, merchant_id }) {
+export default function ReturnPayment({ datas, total_amount, transaction, storedToken, merchant_id, referer }) {
     
     const [isLoading, setIsLoading] = useState(false);
 
@@ -11,6 +11,7 @@ export default function ReturnPayment({ datas, total_amount, transaction, stored
         transaction: transaction,
         storedToken: storedToken,
         merchant_id: merchant_id,
+        referer: referer,
     })
 
     const submit = (e) => {

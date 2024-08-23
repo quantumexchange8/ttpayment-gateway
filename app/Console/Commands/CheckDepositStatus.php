@@ -50,15 +50,15 @@ class CheckDepositStatus extends Command
             $merchant = $pending->merchant_id;
             $merchantWallet = MerchantWallet::where('merchant_id', $merchant)->first();
                        
-            // $response = Http::get('https://nile.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
-            //     'min_timestamp' => $min_timeStamp,
-            //     'only_to' => true,
-            // ]);
-
-            $response = Http::get('https://api.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
+            $response = Http::get('https://nile.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
                 'min_timestamp' => $min_timeStamp,
                 'only_to' => true,
             ]);
+
+            // $response = Http::get('https://api.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
+            //     'min_timestamp' => $min_timeStamp,
+            //     'only_to' => true,
+            // ]);
             
             if ($response->successful()) {
                 $transactionInfo = $response->json();
@@ -104,7 +104,7 @@ class CheckDepositStatus extends Command
 
                             }
     
-                            $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->first();
+                            $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
                             // $payoutSetting = config('payment-gateway');
     
                             // $selectedPayout = $payoutSetting['robotec_live'];
