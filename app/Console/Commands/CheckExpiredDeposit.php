@@ -2,10 +2,13 @@
 
 namespace App\Console\Commands;
 
+use App\Models\PayoutConfig;
 use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
 
 class CheckExpiredDeposit extends Command
 {
@@ -41,6 +44,37 @@ class CheckExpiredDeposit extends Command
             $pending->update([
                 'status' => 'fail',
             ]);
+
+            $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
+            $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
+            $token = Str::random(32);
+
+            $params = [
+                'merchant_id' => $pending->merchant_id,
+                'client_id' => $pending->client_id,
+                'client_email' => $pending->client_email,
+                'transaction_type' => $pending->transaction_type,
+                'from_wallet' => $pending->from_wallet,
+                'to_wallet' => $pending->to_wallet,
+                'txID' => $pending->txID,
+                'block_time' => $pending->block_time,
+                'transfer_amount' => $pending->txn_amount,
+                'transaction_number' => $pending->transaction_number,
+                'amount' => $pending->amount,
+                'status' => $pending->status,
+                'payment_method' => $pending->payment_method,
+                'created_at' => $pending->created_at,
+                'description' => $pending->description,
+                'origin_domain' => $pending->origin_domain,
+                'vCode' => $vCode,
+                'token' => $token,
+            ];
+
+            $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
+            $response = Http::post($callBackUrl, $params);
+
+            Log::debug('deposit expired', $response);
         }
+
     }
 }
