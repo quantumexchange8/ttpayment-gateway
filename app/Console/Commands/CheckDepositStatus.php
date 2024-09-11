@@ -60,11 +60,11 @@ class CheckDepositStatus extends Command
             //     'only_to' => true,
             // ]);
 
-            Log::debug('response get', $response);
+            Log::debug('Response received', $response->json());
             
             if ($response->successful()) {
                 $transactionInfo = $response->json();
-
+                
                 foreach($transactionInfo as $transactions) {
                     Log::debug('transactions', $transactions);
 
