@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Merchant;
 use App\Models\MerchantWallet;
 use App\Models\PayoutConfig;
 use App\Models\RateProfile;
@@ -47,8 +48,9 @@ class CheckDepositStatus extends Command
             $tokenAddress = $pending->to_wallet;
             $createdAt = $pending->created_at;
             $min_timeStamp = $createdAt->timestamp * 1000;
-            $merchant = $pending->merchant_id;
-            $merchantWallet = MerchantWallet::where('merchant_id', $merchant)->first();
+            $merchantID = $pending->merchant_id;
+            $merchant = Merchant::find($merchantID);
+            $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
                        
             $response = Http::get('https://nile.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
                 'min_timestamp' => $min_timeStamp,
@@ -92,8 +94,8 @@ class CheckDepositStatus extends Command
                             ]);
 
                             if ($pending->transaction_type === 'deposit') {
-                                $merchantWallet = MerchantWallet::where('merchant_id', $merchant)->first();
-                                $merchantRateProfile = RateProfile::find($merchant);
+                                $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
+                                $merchantRateProfile = RateProfile::find($merchant->rate_id);
 
                                 $merchantWallet->gross_deposit += $txnAmount; //gross amount 
                                 $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
