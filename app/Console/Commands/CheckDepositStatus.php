@@ -59,6 +59,8 @@ class CheckDepositStatus extends Command
             //     'min_timestamp' => $min_timeStamp,
             //     'only_to' => true,
             // ]);
+
+            Log::debug('response get', $response);
             
             if ($response->successful()) {
                 $transactionInfo = $response->json();
