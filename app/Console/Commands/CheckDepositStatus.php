@@ -69,7 +69,7 @@ class CheckDepositStatus extends Command
             if ($response->successful()) {
                 $transactionInfo = $response->json();
 
-                if (!emptyArray($transactionInfo->data)) {
+                if (!empty($transactionInfo['data'])) {
                     foreach($transactionInfo as $transactions) {
                         Log::debug('transactions', $transactions);
     
