@@ -7,14 +7,27 @@ import React, { useState, useEffect } from "react";
 import { QRCode } from 'react-qrcode-logo';
 // import TronComponent from "@/Components/TronComponent";
 // import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
+import Tooltip from "@/Components/Tooltip";
+import { CopyIcon } from "@/Components/Brand";
 
-export default function Payment({ merchant, merchantClientId, vCode, orderNumber, expirationTime, transaction, tokenAddress }) {
+export default function Payment({ merchant, merchantClientId, vCode, orderNumber, expirationTime, transaction, tokenAddress, lang, referer }) {
     const [currentWalletIndex, setCurrentWalletIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [timeRemaining, setTimeRemaining] = useState(merchant.refresh_time);
     const [expiredTimeRemainings, setExpiredTimeRemainings] = useState('');
     const [txidVal, setTxidVal ] = useState();
     const [txidError, setTxidError] = useState(null);
+    const { t, i18n } = useTranslation();
+    const [tooltipText, setTooltipText] = useState('copy');
+
+    useEffect(() => {
+        if (lang === 'en' || lang === 'cn' || lang === 'tw') {
+          i18n.changeLanguage(lang);
+        } else {
+          i18n.changeLanguage('en');
+        }
+    }, [lang, i18n]);
 
     useEffect(() => {
         const refreshInterval = merchant.refresh_time * 1000; // Convert to milliseconds
@@ -50,6 +63,7 @@ export default function Payment({ merchant, merchantClientId, vCode, orderNumber
         orderNumber: orderNumber,
         txidValue: txidVal,
         transaction: transaction.id,
+        referer: referer,
     })
 
     const returnCall = () => {
@@ -140,8 +154,23 @@ export default function Payment({ merchant, merchantClientId, vCode, orderNumber
         return () => clearInterval(intervalId); // Cleanup interval on component unmount
     }, [expirationTime]);
 
+    const handleCopy = (tokenAddress) => {
+        const textToCopy = tokenAddress;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            setTooltipText('Copied!');
+            console.log('Copied to clipboard:', textToCopy);
+
+            // Revert tooltip text back to 'copy' after 2 seconds
+            setTimeout(() => {
+                setTooltipText('copy');
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+        });
+    };
+
     return (
-        <div className="w-full flex flex-col items-center justify-center gap-5 min-h-screen">
+        <div className="w-full flex flex-col items-center justify-center gap-5 min-h-[80vh]">
 
             <div>
                 <QRCode 
@@ -149,8 +178,19 @@ export default function Payment({ merchant, merchantClientId, vCode, orderNumber
                 fgColor="#000000"
                 />
             </div>
-            <div className="text-base font-semibold text-center">
-                Wallet Address : {tokenAddress}
+            <div className="text-base font-semibold text-center flex flex-col">
+                <div>{t('wallet_address')}:</div>
+                <div className=" font-bold flex items-center gap-1" >
+                    <div>
+                        {tokenAddress}
+                    </div>
+                    <div onClick={() => handleCopy(tokenAddress)}>
+                        <Tooltip text={tooltipText}>
+                            <CopyIcon />
+                        </Tooltip>
+                    </div>
+                </div>
+                {/* Wallet Address : {tokenAddress} */}
             </div>
             {/* <div className="text-base font-semibold">
                 QR Code refreshing in: {timeRemaining} seconds

@@ -155,6 +155,8 @@ class TransactionController extends Controller
                             'expirationTime' => $expirationTime,
                             'transaction' => $transaction,
                             'tokenAddress' => $tokenAddress,
+                            'lang' => $lang,
+                            'origin_domain' => $referer,
                         ]);
                     } else if ($merchant->deposit_type == 1) {
 
