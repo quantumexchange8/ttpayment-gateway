@@ -24,7 +24,7 @@ class CheckExpiredDeposit extends Command
      *
      * @var string
      */
-    protected $description = 'Check deposit statuses has expired over 1 day';
+    protected $description = 'Check deposit statuses has expired over 15 minutes';
 
     /**
      * Execute the console command.
@@ -34,7 +34,7 @@ class CheckExpiredDeposit extends Command
         $pendingPayment = Transaction::where('status', 'pending')
                 ->where('transaction_type', 'deposit')
                 ->whereNull('txID')
-                ->where('created_at', '<', Carbon::now()->subDay()) // Transactions created more than 24 hours ago
+                ->where('created_at', '<', Carbon::now()->addMinutes(15)) // Transactions created more than 15 minutes
                 ->get();
         
         foreach ($pendingPayment as $pending) {
