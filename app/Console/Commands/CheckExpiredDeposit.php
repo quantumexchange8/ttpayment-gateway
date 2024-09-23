@@ -73,7 +73,10 @@ class CheckExpiredDeposit extends Command
             $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
             $response = Http::post($callBackUrl, $params);
 
-            Log::debug('deposit expired', $response);
+            Log::debug('deposit expired', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
         }
     }
 }
