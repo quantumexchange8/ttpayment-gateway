@@ -83,7 +83,8 @@ class CheckDepositStatus extends Command
                                 $txnAmount = $transaction['value'] / 1000000;
                                 $timestamp = $transaction['block_timestamp'] / 1000;
                                 $transaction_date = Carbon::createFromTimestamp($timestamp)->setTimezone('GMT+8');
-                                $fee = 0.00;
+                                $merchantRateProfile = RateProfile::find($merchant->rate_id);
+                                $fee = (($txnAmount * $merchantRateProfile->deposit_fee) / 100);
     
                                 $pending->update([
                                     'from_wallet' => $transaction['from'],
@@ -98,7 +99,7 @@ class CheckDepositStatus extends Command
     
                                 if ($pending->transaction_type === 'deposit') {
                                     $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
-                                    $merchantRateProfile = RateProfile::find($merchant->rate_id);
+                                    
     
                                     $merchantWallet->gross_deposit += $txnAmount; //gross amount 
                                     $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
