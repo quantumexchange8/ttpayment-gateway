@@ -208,7 +208,9 @@ class TransactionController extends Controller
             $transaction = Transaction::find($request->transaction);
             $nowDateTime = Carbon::now();
             $amount = $transactionData['value'] / 1000000 ;
-            $fee = 0.00;
+            $merchantRateProfile = RateProfile::find($merchant->rate_id);
+            $fee = (($amount * $merchantRateProfile->deposit_fee) / 100);
+
             Log::debug('get value', $transactionData);
             
             $check = Transaction::where('txID', $transactionData['transaction_id'])->first();
@@ -221,13 +223,12 @@ class TransactionController extends Controller
                     'to_wallet' => $transactionData['to'],
                     'txn_amount' => $amount,
                     'fee' => $fee,
-                    'total_amount' => $amount ,
+                    'total_amount' => $amount - $fee,
                     'status' => 'success',
                     'transaction_date' => $nowDateTime
                 ]);
                 if ($transaction->transaction_type === 'deposit') {
                     $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
-                    $merchantRateProfile = RateProfile::find($merchant->rate_id);
     
                     $merchantWallet->gross_deposit += $transaction->txn_amount; //gross amount 
                     $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
