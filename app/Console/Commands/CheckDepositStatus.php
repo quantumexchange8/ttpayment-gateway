@@ -86,7 +86,6 @@ class CheckDepositStatus extends Command
                                 $merchantRateProfile = RateProfile::find($merchant->rate_id);
                                 $fee = (($txnAmount * $merchantRateProfile->deposit_fee) / 100);
                                 $symbol = $transaction['token_info']['symbol'];
-                                Log::debug('symbol', $symbol);
 
                                 if ($symbol === "USDT") {
                                     $pending->update([
