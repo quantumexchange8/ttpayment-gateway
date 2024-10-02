@@ -210,46 +210,64 @@ class TransactionController extends Controller
             $amount = $transactionData['value'] / 1000000 ;
             $merchantRateProfile = RateProfile::find($merchant->rate_id);
             $fee = (($amount * $merchantRateProfile->deposit_fee) / 100);
+            $symbol = $transactionData['token_info']['symbol'];
 
             Log::debug('get value', $transactionData);
             
             $check = Transaction::where('txID', $transactionData['transaction_id'])->first();
 
             if (empty($check)) {
-                $transaction->update([
-                    'txID' => $transactionData['transaction_id'],
-                    'block_time' => $transactionData['block_timestamp'],
-                    'from_wallet' => $transactionData['from'],
-                    'to_wallet' => $transactionData['to'],
-                    'txn_amount' => $amount,
-                    'fee' => $fee,
-                    'total_amount' => $amount - $fee,
-                    'status' => 'success',
-                    'transaction_date' => $nowDateTime
-                ]);
-                if ($transaction->transaction_type === 'deposit') {
-                    $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
-    
-                    $merchantWallet->gross_deposit += $transaction->txn_amount; //gross amount 
-                    $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
-                    $merchantWallet->total_fee += $gross_fee; // total fee
-                    $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
+
+                if ($symbol === "USDT") {
+                    $transaction->update([
+                        'txID' => $transactionData['transaction_id'],
+                        'block_time' => $transactionData['block_timestamp'],
+                        'from_wallet' => $transactionData['from'],
+                        'to_wallet' => $transactionData['to'],
+                        'txn_amount' => $amount,
+                        'fee' => $fee,
+                        'total_amount' => $amount - $fee,
+                        'status' => 'success',
+                        'transaction_date' => $nowDateTime
+                    ]);
                     
-                    $merchantWallet->total_deposit += $transaction->txn_amount;
-    
-                    $merchantWallet->save();
-    
+                    if ($transaction->transaction_type === 'deposit') {
+                        $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
+        
+                        $merchantWallet->gross_deposit += $transaction->txn_amount; //gross amount 
+                        $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
+                        $merchantWallet->total_fee += $gross_fee; // total fee
+                        $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
+                        
+                        $merchantWallet->total_deposit += $transaction->txn_amount;
+        
+                        $merchantWallet->save();
+        
+                    } else {
+                        $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
+        
+                        // $merchantWallet->gross_withdrawal += $transaction->txn_amount;
+                        // $merchantWallet->net_withdrawal += $transaction->total_amount;
+                        // $merchantWallet->withdrawal_fee += $transaction->fee;
+        
+                        // $merchantWallet->save();
+        
+                        // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
+        
+                    }
                 } else {
-                    $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
-    
-                    // $merchantWallet->gross_withdrawal += $transaction->txn_amount;
-                    // $merchantWallet->net_withdrawal += $transaction->total_amount;
-                    // $merchantWallet->withdrawal_fee += $transaction->fee;
-    
-                    // $merchantWallet->save();
-    
-                    // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
-    
+                    $transaction->update([
+                        'txID' => $transactionData['transaction_id'],
+                        'block_time' => $transactionData['block_timestamp'],
+                        'from_wallet' => $transactionData['from'],
+                        'to_wallet' => $transactionData['to'],
+                        'txn_amount' => $amount,
+                        'fee' => $fee,
+                        'total_amount' => $amount - $fee,
+                        'status' => 'fail',
+                        'transaction_date' => $nowDateTime,
+                        'description' => 'unknown symbol',
+                    ]);
                 }
             } else {
                 Log::debug('txID repeated');

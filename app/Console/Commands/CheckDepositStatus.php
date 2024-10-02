@@ -85,31 +85,47 @@ class CheckDepositStatus extends Command
                                 $transaction_date = Carbon::createFromTimestamp($timestamp)->setTimezone('GMT+8');
                                 $merchantRateProfile = RateProfile::find($merchant->rate_id);
                                 $fee = (($txnAmount * $merchantRateProfile->deposit_fee) / 100);
-    
-                                $pending->update([
-                                    'from_wallet' => $transaction['from'],
-                                    'txID' => $transaction['transaction_id'],
-                                    'block_time' => $transaction['block_timestamp'],
-                                    'txn_amount' => $txnAmount,
-                                    'fee' => $fee,
-                                    'total_amount' => $txnAmount - $fee,
-                                    'transaction_date' => $transaction_date,
-                                    'status' => 'success',
-                                ]);
-    
-                                if ($pending->transaction_type === 'deposit') {
-                                    $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
-    
-                                    $merchantWallet->gross_deposit += $txnAmount; //gross amount 
-                                    $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
-                                    $merchantWallet->total_fee += $gross_fee; // total fee
-                                    $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
-                                    
-                                    $merchantWallet->total_deposit += $txnAmount;
-    
-                                    $merchantWallet->save();
-    
+                                $symbol = $transaction['token_info']['symbol'];
+
+                                if ($symbol === "USDT") {
+                                    $pending->update([
+                                        'from_wallet' => $transaction['from'],
+                                        'txID' => $transaction['transaction_id'],
+                                        'block_time' => $transaction['block_timestamp'],
+                                        'txn_amount' => $txnAmount,
+                                        'fee' => $fee,
+                                        'total_amount' => $txnAmount - $fee,
+                                        'transaction_date' => $transaction_date,
+                                        'status' => 'success',
+                                    ]);
+        
+                                    if ($pending->transaction_type === 'deposit') {
+                                        $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
+        
+                                        $merchantWallet->gross_deposit += $txnAmount; //gross amount 
+                                        $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
+                                        $merchantWallet->total_fee += $gross_fee; // total fee
+                                        $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
+                                        
+                                        $merchantWallet->total_deposit += $txnAmount;
+        
+                                        $merchantWallet->save();
+        
+                                    }
+                                } else {
+                                    $pending->update([
+                                        'from_wallet' => $transaction['from'],
+                                        'txID' => $transaction['transaction_id'],
+                                        'block_time' => $transaction['block_timestamp'],
+                                        'txn_amount' => $txnAmount,
+                                        'fee' => $fee,
+                                        'total_amount' => $txnAmount - $fee,
+                                        'transaction_date' => $transaction_date,
+                                        'status' => 'fail',
+                                        'description' => 'unknown symbol',
+                                    ]);
                                 }
+                                
         
                                 $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
                                 // $payoutSetting = config('payment-gateway');
