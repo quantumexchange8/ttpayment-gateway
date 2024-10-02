@@ -215,44 +215,59 @@ class TransactionController extends Controller
             $check = Transaction::where('txID', $transactionData['transaction_id'])->first();
             $merchantRateProfile = RateProfile::find($merchant->rate_id);
             $fee = (($amount * $merchantRateProfile->deposit_fee) / 100);
+            $symbol = $transactionData['token_info']['symbol'];
 
             if (empty($check)) {
-                $transaction->update([
-                    'txID' => $transactionData['transaction_id'],
-                    'block_time' => $transactionData['block_timestamp'],
-                    'from_wallet' => $transactionData['from'],
-                    'to_wallet' => $transactionData['to'],
-                    'txn_amount' => $amount,
-                    'fee' => $fee,
-                    'total_amount' => $amount - $fee,
-                    'status' => 'success',
-                    'transaction_date' => $nowDateTime
-                ]);
 
-                if ($transaction->transaction_type === 'deposit') {
-                    $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
-                    
-    
-                    $merchantWallet->gross_deposit += $transaction->txn_amount; //gross amount 
-                    $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
-                    $merchantWallet->total_fee += $gross_fee; // total fee
-                    $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
-                    
-                    $merchantWallet->total_deposit += $transaction->txn_amount;
-    
-                    $merchantWallet->save();
-    
+                if ($symbol === "USDT") {
+                    $transaction->update([
+                        'txID' => $transactionData['transaction_id'],
+                        'block_time' => $transactionData['block_timestamp'],
+                        'from_wallet' => $transactionData['from'],
+                        'to_wallet' => $transactionData['to'],
+                        'txn_amount' => $amount,
+                        'fee' => $fee,
+                        'total_amount' => $amount - $fee,
+                        'status' => 'success',
+                        'transaction_date' => $nowDateTime
+                    ]);
+                    if ($transaction->transaction_type === 'deposit') {
+                        $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
+        
+                        $merchantWallet->gross_deposit += $transaction->txn_amount; //gross amount 
+                        $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
+                        $merchantWallet->total_fee += $gross_fee; // total fee
+                        $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
+                        
+                        $merchantWallet->total_deposit += $transaction->txn_amount;
+        
+                        $merchantWallet->save();
+        
+                    } else {
+                        $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
+        
+                        // $merchantWallet->gross_withdrawal += $transaction->txn_amount;
+                        // $merchantWallet->net_withdrawal += $transaction->total_amount;
+                        // $merchantWallet->withdrawal_fee += $transaction->fee;
+        
+                        // $merchantWallet->save();
+        
+                        // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
+        
+                    }
                 } else {
-                    $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
-    
-                    // $merchantWallet->gross_withdrawal += $transaction->txn_amount;
-                    // $merchantWallet->net_withdrawal += $transaction->total_amount;
-                    // $merchantWallet->withdrawal_fee += $transaction->fee;
-    
-                    // $merchantWallet->save();
-    
-                    // $message = 'Approved $' . $amount . ', TxID - ' . $transactionData['transaction_id'];
-    
+                    $transaction->update([
+                        'txID' => $transactionData['transaction_id'],
+                        'block_time' => $transactionData['block_timestamp'],
+                        'from_wallet' => $transactionData['from'],
+                        'to_wallet' => $transactionData['to'],
+                        'txn_amount' => $amount,
+                        'fee' => $fee,
+                        'total_amount' => $amount - $fee,
+                        'status' => 'fail',
+                        'transaction_date' => $nowDateTime,
+                        'description' => 'unknown symbol',
+                    ]);
                 }
 
             } else {
@@ -262,21 +277,6 @@ class TransactionController extends Controller
                     'transaction_date' => $nowDateTime
                 ]);
             }
-
-            // OneSignal::sendPush($fields, $message);
-
-            // foreach ($merchant->merchantEmail as $emails) {
-            //     $email = $emails->email;
-
-            //     Notification::route('mail', $email)->notify(new TransactionNotification($merchant->name, $transactionData['transaction_id'], $transactionData['from'], $transactionData['to'], $amount, $transaction->status));
-            // }
-
-
-            // foreach ($merchant->merchantEmail as $emails) {
-            //     $email = $emails->email;
-
-            //     Notification::route('mail', $email)->notify(new TransactionNotification($merchant->name, $transactionData['transaction_id'], $transactionData['from'], $transactionData['to'], $amount, $transaction->status));
-            // }
 
             return redirect()->route('returnTransaction', ['transaction_id' => $transaction->id]);
         } else {
@@ -381,7 +381,6 @@ class TransactionController extends Controller
             'block_time' => $transactionVal->block_time,
             'transfer_amount' => $transactionVal->txn_amount,
             'transaction_number' => $transactionVal->transaction_number,
-            // 'amount' => $transactionVal->amount,
             'status' => $transactionVal->status,
             'payment_method' => $transactionVal->payment_method,
             'created_at' => $transactionVal->created_at,
