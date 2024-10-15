@@ -2,5 +2,8 @@
     "please_ensure": "Please make sure the tokens you send are ",
     "wallet_address": "Wallet Address",
     "time_remaining": "Time Remaining",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "remark1": "Please ensure that the wallet transfer is successfully completed before closing this page.",
+    "remark2": "Complete the transfer before the countdown ends.",
+    "note": "Note"
 }
