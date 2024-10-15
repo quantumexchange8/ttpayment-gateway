@@ -2,5 +2,8 @@
     "please_ensure": "請確保您發送的代幣是",
     "wallet_address": "收款地址",
     "time_remaining": "剩余时间",
-    "cancel": "取消"
+    "cancel": "取消",
+    "remark1": "请务必完成钱包转账成功后才关闭此页面.",
+    "remark2": "在倒数结束前完成转账.",
+    "note": "提示"
 }

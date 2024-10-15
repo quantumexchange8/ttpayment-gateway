@@ -172,7 +172,7 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
     };
 
     return (
-        <div className="w-full flex flex-col items-center justify-center gap-5 min-h-[80vh]">
+        <div className="w-full flex flex-col items-center justify-center gap-5 px-3 md:px-0 min-h-[80vh]">
 
             <div className="flex flex-col items-center gap-2">
                 <div className="w-28">
@@ -181,16 +181,21 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
                 <div className="text-lg font-bold">
                     TT Payment Gateway
                 </div>
-                <div className="text-sm font-medium">
-                    
+                <div className="flex flex-col items-center gap-2">
+                    <div className="text-sm font-medium">
+                        {t('please_ensure')}<span className="font-bold">USDT TRC 20</span>.
+                    </div>
                     {/* 請確保您發送的代幣是<span className="font-bold">USDT TRC 20</span>. */}
-                    {t('please_ensure')}<span className="font-bold">USDT TRC 20</span>.
+                    <div className="flex flex-col text-sm font-bold text-center md:max-w-80 text-[#ef4444] w-full">
+                        <div>{t('note')}: {t('remark1')}</div>
+                        <div>{t('remark2')}</div>
+                    </div>
                 </div>
             </div>
             <div>
                 <QRCode 
-                value={tokenAddress} 
-                fgColor="#000000"
+                    value={tokenAddress} 
+                    fgColor="#000000"
                 />
             </div>
             <div className="text-base font-semibold text-center flex flex-col">
@@ -206,20 +211,18 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
                     </div>
                 </div>
             </div>
-            
-            <div className="text-base font-semibold">
-                {t('time_remaining')}: {expiredTimeRemainings}
-            </div>
 
-            <form onSubmit={submit}>
-                <Button
-                    type="submit"
-                    variant="danger"
-                    size="sm"
-                >
-                    {t('cancel')}
-                </Button>
-            </form>
+           
+            <Button
+                type="submit"
+                variant="danger"
+                size="sm"
+                className="bg-[#525252] hover:bg-[#404040] cursor-not-allowed"
+            >
+                <span className="text-base font-semibold">
+                    {t('time_remaining')}: {expiredTimeRemainings}
+                </span>
+            </Button>
         </div>
     );
 }
