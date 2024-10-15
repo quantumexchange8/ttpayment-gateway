@@ -38,7 +38,7 @@ export default ({
             variantClasses = `bg-cyan-500 text-white hover:bg-cyan-600 focus:ring-cyan-500`
             break
         case 'black':
-            variantClasses = `bg-[#03071266] text-white hover:text-white hover:bg-[#030712cc] focus:ring-black disabled:text-gray-700 disabled:bg-[#03071266]`
+            variantClasses = `bg-[#525252] text-white hover:text-white hover:bg-[#404040] focus:ring-black disabled:text-gray-700 disabled:bg-[#03071266]`
             break
         default:
             variantClasses = `bg-primary-700 text-white hover:bg-primary-800 disabled:text-primary-700 disabled:bg-primary-900`

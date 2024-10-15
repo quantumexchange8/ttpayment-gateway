@@ -215,7 +215,7 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
            
             <Button
                 type="submit"
-                variant="danger"
+                variant="black"
                 size="sm"
                 className="bg-[#525252] hover:bg-[#404040] cursor-not-allowed"
             >
