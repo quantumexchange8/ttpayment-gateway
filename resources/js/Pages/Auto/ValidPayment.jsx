@@ -28,10 +28,24 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
 
     useEffect(() => {
         if (lang === 'en' || lang === 'cn' || lang === 'tw') {
-          i18n.changeLanguage(lang);
+            i18n.changeLanguage(lang);
         } else {
-          i18n.changeLanguage('en');
+            i18n.changeLanguage('en');
         }
+        
+        // Check if translations are loaded
+        i18n.on('loaded', (loaded) => {
+            console.log('Loaded Translations:', loaded);
+        });
+        
+        i18n.on('languageChanged', (lng) => {
+            console.log('Language changed to:', lng);
+            console.log('Current Translations:', {
+                note: t('note'),
+                remark1: t('remark1'),
+                remark2: t('remark2'),
+            });
+        });
     }, [lang, i18n]);
 
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -215,7 +229,7 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
            
             <Button
                 type="submit"
-                variant="danger"
+                variant="black"
                 size="sm"
                 className="bg-[#525252] hover:bg-[#404040] cursor-not-allowed"
             >
