@@ -392,11 +392,11 @@ class TransactionController extends Controller
         $request->session()->flush();
 
         $url = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->returnUrl;
-        
         $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
         
+        
         $response = Http::post($callBackUrl, $params);
-        Log::debug('return callback ', $response->json());
+        Log::debug('call back respoense', $response->json());
 
         if ($response['success']) {
             $params['response_status'] = 'success';
