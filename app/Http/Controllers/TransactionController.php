@@ -394,7 +394,6 @@ class TransactionController extends Controller
         $url = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->returnUrl;
         
         $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
-        dd($callBackUrl);
         
         $response = Http::post($callBackUrl, $params);
         Log::debug('return callback ', $response->json());
