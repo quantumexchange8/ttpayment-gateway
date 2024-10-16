@@ -367,6 +367,9 @@ class TransactionController extends Controller
         
         $payoutSetting = PayoutConfig::where('merchant_id', $merchant)->first();
         $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $referer);
+        Log::debug('$matchingPayoutSetting ', $matchingPayoutSetting);
+        Log::debug('$payoutSetting ', $payoutSetting);
+        Log::debug('$referer ', $referer);
         
         $vCode = md5($transactionVal->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
         
@@ -392,8 +395,9 @@ class TransactionController extends Controller
         $request->session()->flush();
 
         $url = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->returnUrl;
+        Log::debug('$url ', $url);
         $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
-        
+        Log::debug('$callBackUrl ', $callBackUrl);
         
         $response = Http::post($callBackUrl, $params);
         Log::debug('return callback ', $response->json());
