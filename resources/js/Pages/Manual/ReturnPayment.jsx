@@ -40,7 +40,7 @@ export default function ReturnPayment({ datas, total_amount, transaction, stored
                     </div>
                 </div>
                 <form onSubmit={submit} >
-                    <Button type="submit" size="sm" variant="success" className="w-full flex justify-center">
+                    <Button type="submit" size="sm" variant="success" className="w-full flex justify-center" disabled={processing}>
                         <span className="text-sm font-semibold">
                             Return
                         </span>
