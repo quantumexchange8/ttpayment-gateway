@@ -210,8 +210,6 @@ class TransactionController extends Controller
             $transaction = Transaction::find($request->transaction);
             $nowDateTime = Carbon::now();
             $amount = $transactionData['value'] / 1000000 ;
-            $referer = $request->referer;
-            $token = $request->storedToken;
             Log::debug('get value', $transactionData);
 
             $check = Transaction::where('txID', $transactionData['transaction_id'])->first();
@@ -244,41 +242,10 @@ class TransactionController extends Controller
                         $merchantWallet->total_deposit += $transaction->txn_amount;
                         $merchantWallet->save();
 
-                        // callback
-                        $payoutSetting = PayoutConfig::where('merchant_id', $merchant->id)->first();
-                        Log::debug('payoutSetting', $payoutSetting);
-                        $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $referer);
-                        Log::debug('matchingPayoutSetting', $matchingPayoutSetting);
-                        $vCode = md5($transaction->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+                        // callback here
+                        
 
-                        $params = [
-                            'merchant_id' => $transaction->merchant_id,
-                            'client_id' => $transaction->client_id,
-                            'transaction_type' => $transaction->transaction_type,
-                            'from_wallet' => $transaction->from_wallet,
-                            'to_wallet' => $transaction->to_wallet,
-                            'txID' => $transaction->txID,
-                            'block_time' => $transaction->block_time,
-                            'transfer_amount' => $transaction->txn_amount,
-                            'transaction_number' => $transaction->transaction_number,
-                            'status' => $transaction->status,
-                            'payment_method' => $transaction->payment_method,
-                            'created_at' => $transaction->created_at,
-                            'description' => $transaction->description,
-                            'vCode' => $vCode,
-                            'token' => $token,
-                        ];
-
-                        $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
-                        $response = Http::post($callBackUrl, $params);
-                        Log::debug($response);
         
-                        if ($response['success']) {
-                            $params['response_status'] = 'success';
-                        } else {
-                            $params['response_status'] = 'failed';
-                        }
-
                     } else {
                         $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
         
@@ -428,17 +395,17 @@ class TransactionController extends Controller
         $request->session()->flush();
 
         $url = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->returnUrl;
-        // $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
+        $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
         
         
-        // $response = Http::post($callBackUrl, $params);
-        // Log::debug('call back respoense', $response->json());
+        $response = Http::post($callBackUrl, $params);
+        Log::debug('call back respoense', $response->json());
 
-        // if ($response['success']) {
-        //     $params['response_status'] = 'success';
-        // } else {
-        //     $params['response_status'] = 'failed';
-        // }
+        if ($response['success']) {
+            $params['response_status'] = 'success';
+        } else {
+            $params['response_status'] = 'failed';
+        }
 
         $redirectUrl = $url . "?" . http_build_query($params);
         return Inertia::location($redirectUrl);
