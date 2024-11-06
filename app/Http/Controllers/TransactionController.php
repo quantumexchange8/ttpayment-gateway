@@ -399,7 +399,6 @@ class TransactionController extends Controller
         
         
         $response = Http::post($callBackUrl, $params);
-        Log::debug('call back respoense', $response->json());
 
         if ($response['success']) {
             $params['response_status'] = 'success';
