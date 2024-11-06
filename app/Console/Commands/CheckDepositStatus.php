@@ -153,7 +153,7 @@ class CheckDepositStatus extends Command
                                 $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
                                 $response = Http::post($callBackUrl, $params);
                                 
-                                Log::debug('deposit Callback', $response);
+                                Log::debug('deposit Callback', [$response]);
                                 
                             } else {
                                 Log::debug('txid', ['transaction_id' => $transaction['transaction_id']]);
