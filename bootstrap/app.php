@@ -21,7 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withSchedule(function(Schedule $schedule) {
-        $schedule->command('check:deposit-status')->everyTwoMinutes();
+        $schedule->command('check:deposit-status')->everyThirtyMinutes();
         $schedule->command('check:deposit-expired-status')->everyFifteenMinutes();
     })
     ->withExceptions(function (Exceptions $exceptions) {
