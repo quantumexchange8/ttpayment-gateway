@@ -242,6 +242,39 @@ class TransactionController extends Controller
                         $merchantWallet->total_deposit += $transaction->txn_amount;
         
                         $merchantWallet->save();
+
+                        // callback here
+                        $payoutSetting = PayoutConfig::where('merchant_id', $request->merchantId)->first();
+                        $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $request->referer);
+
+                        $vCode = md5($transaction->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+                        $params = [
+                            'merchant_id' => $transaction->merchant_id,
+                            'client_id' => $transaction->client_id,
+                            'transaction_type' => $transaction->transaction_type,
+                            'from_wallet' => $transaction->from_wallet,
+                            'to_wallet' => $transaction->to_wallet,
+                            'txID' => $transaction->txID,
+                            'block_time' => $transaction->block_time,
+                            'transfer_amount' => $transaction->txn_amount,
+                            'transaction_number' => $transaction->transaction_number,
+                            'status' => $transaction->status,
+                            'payment_method' => $transaction->payment_method,
+                            'created_at' => $transaction->created_at,
+                            'description' => $transaction->description,
+                            'vCode' => $vCode,
+                            // 'token' => $token,
+                        ];
+
+                        $url = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->returnUrl;
+                        $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
+
+                        $response = Http::post($callBackUrl, $params);
+                        if ($response['success']) {
+                            $params['response_status'] = 'success';
+                        } else {
+                            $params['response_status'] = 'failed';
+                        }
         
                     } else {
                         $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
@@ -410,14 +443,14 @@ class TransactionController extends Controller
         $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
         
         
-        $response = Http::post($callBackUrl, $params);
-        Log::debug($response);
+        // $response = Http::post($callBackUrl, $params);
+        // Log::debug($response);
 
-        if ($response['success']) {
-            $params['response_status'] = 'success';
-        } else {
-            $params['response_status'] = 'failed';
-        }
+        // if ($response['success']) {
+        //     $params['response_status'] = 'success';
+        // } else {
+        //     $params['response_status'] = 'failed';
+        // }
 
         $redirectUrl = $url . "?" . http_build_query($params);
         return Inertia::location($redirectUrl);
