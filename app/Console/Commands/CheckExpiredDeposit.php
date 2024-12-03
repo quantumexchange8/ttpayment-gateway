@@ -34,50 +34,56 @@ class CheckExpiredDeposit extends Command
         $pendingPayment = Transaction::where('status', 'pending')
                 ->where('transaction_type', 'deposit')
                 ->whereNull('txID')
-                ->where('created_at', '<', Carbon::now()->addMinutes(15)) // Transactions created more than 15 minutes
+                // ->where('created_at', '<', Carbon::now()->addMinutes(15)) // Transactions created more than 15 minutes
                 ->get();
+
+        $nowTime = Carbon::now();
         
         foreach ($pendingPayment as $pending) {
             Log::debug('expired status', ['transaction' => $pending->toArray()]);
 
+            $checkPendingTime = $pending->created_at;
+            $expiredTime = $checkPendingTime->addMinutes(15);
 
-            $pending->update([
-                'status' => 'fail',
-            ]);
+            if ($nowTime > $expiredTime) {
+                //function for after $pending created at time is more than 15minutes
+                $pending->update([
+                    'status' => 'fail',
+                ]);
 
-            $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
-            $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
-            $token = Str::random(32);
+                $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
+                $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
+                $token = Str::random(32);
 
-            $params = [
-                'merchant_id' => $pending->merchant_id,
-                'client_id' => $pending->client_id,
-                'client_email' => $pending->client_email,
-                'transaction_type' => $pending->transaction_type,
-                'from_wallet' => $pending->from_wallet,
-                'to_wallet' => $pending->to_wallet,
-                'txID' => $pending->txID,
-                'block_time' => $pending->block_time,
-                'transfer_amount' => $pending->txn_amount,
-                'transaction_number' => $pending->transaction_number,
-                'amount' => $pending->amount,
-                'status' => $pending->status,
-                'payment_method' => $pending->payment_method,
-                'created_at' => $pending->created_at,
-                'description' => $pending->description,
-                'origin_domain' => $pending->origin_domain,
-                'vCode' => $vCode,
-                'token' => $token,
-            ];
+                $params = [
+                    'merchant_id' => $pending->merchant_id,
+                    'client_id' => $pending->client_id,
+                    'client_email' => $pending->client_email,
+                    'transaction_type' => $pending->transaction_type,
+                    'from_wallet' => $pending->from_wallet,
+                    'to_wallet' => $pending->to_wallet,
+                    'txID' => $pending->txID,
+                    'block_time' => $pending->block_time,
+                    'transfer_amount' => $pending->txn_amount,
+                    'transaction_number' => $pending->transaction_number,
+                    'amount' => $pending->amount,
+                    'status' => $pending->status,
+                    'payment_method' => $pending->payment_method,
+                    'created_at' => $pending->created_at,
+                    'description' => $pending->description,
+                    'origin_domain' => $pending->origin_domain,
+                    'vCode' => $vCode,
+                    'token' => $token,
+                ];
 
-            $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
-            $response = Http::post($callBackUrl, $params);
+                $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
+                $response = Http::post($callBackUrl, $params);
 
-            Log::debug('deposit expired', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
+                Log::debug('deposit expired', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+            }
         }
-
     }
 }
