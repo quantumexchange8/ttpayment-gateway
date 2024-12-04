@@ -57,7 +57,7 @@ class TransactionController extends Controller
         } else if ($request->merchantId && $request->orderNumber && $request->userId && $request->vCode) {
             
             //check user ID
-            $checkUser = Transaction::where('merchant_id', $merchantId)->where('client_id', $merchantClientId)->whereIn('status', ['pending']);
+            $checkUser = Transaction::where('merchant_id', $merchantId)->where('client_id', $merchantClientId)->whereIn('status', ['pending'])->first();
             if ($checkUser) {
                 $request->session()->flush();
                 return Inertia::render('Welcome');
