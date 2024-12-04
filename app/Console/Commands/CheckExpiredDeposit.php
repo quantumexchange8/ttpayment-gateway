@@ -40,12 +40,12 @@ class CheckExpiredDeposit extends Command
         $nowTime = Carbon::now();
         
         foreach ($pendingPayment as $pending) {
-            Log::debug('expired status', ['transaction' => $pending->toArray()]);
 
             $checkPendingTime = $pending->created_at;
             $expiredTime = $checkPendingTime->addMinutes(15);
 
             if ($nowTime > $expiredTime) {
+                Log::debug('expired status', ['transaction' => $pending->toArray()]);
                 //function for after $pending created at time is more than 15minutes
                 $pending->update([
                     'status' => 'fail',
