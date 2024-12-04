@@ -271,11 +271,11 @@ class TransactionController extends Controller
 
                         $response = Http::post($callBackUrl, $params);
 
-                        if ($response['success']) {
-                            $params['response_status'] = 'success';
-                        } else {
-                            $params['response_status'] = 'failed';
-                        }
+                        // if ($response['success']) {
+                        //     $params['response_status'] = 'success';
+                        // } else {
+                        //     $params['response_status'] = 'failed';
+                        // }
 
         
                     } else {

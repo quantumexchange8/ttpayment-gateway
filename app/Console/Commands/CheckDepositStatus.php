@@ -40,7 +40,7 @@ class CheckDepositStatus extends Command
 
         $pendingPayments = Transaction::where('status', 'pending')
                     ->where('transaction_type', 'deposit')
-                    ->latest()
+                    ->orderByDesc('id')
                     ->get();
 
         
@@ -71,10 +71,10 @@ class CheckDepositStatus extends Command
 
                 if (!empty($transactionInfo['data'])) {
                     foreach($transactionInfo as $transactions) {
-                        Log::debug('transactions', ['transactions' => $transactions]);
+                        Log::debug('transactions', $transactions);
     
                         foreach($transactions as $transaction) {
-                            Log::debug('data', ['transaction' => $transaction]);
+                            Log::debug('data', $transaction);
                             Log::debug('data test', ['transaction_id' => $transaction['transaction_id']]);
     
                             if (Transaction::where('txID', $transaction['transaction_id'])->doesntExist()) {
@@ -153,7 +153,7 @@ class CheckDepositStatus extends Command
                                 $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
                                 $response = Http::post($callBackUrl, $params);
                                 
-                                Log::debug('deposit Callback', ['response' => $response]);
+                                Log::debug('deposit Callback', $response);
                                 
                             } else {
                                 Log::debug('txid', ['transaction_id' => $transaction['transaction_id']]);
