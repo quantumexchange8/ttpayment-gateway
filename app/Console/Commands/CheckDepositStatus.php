@@ -40,7 +40,7 @@ class CheckDepositStatus extends Command
 
         $pendingPayments = Transaction::where('status', 'pending')
                     ->where('transaction_type', 'deposit')
-                    ->orderByDesc('id')
+                    ->latest()
                     ->get();
 
         
