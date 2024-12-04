@@ -51,10 +51,17 @@ class TransactionController extends Controller
         $lang = $request->query('locale'); // Language ? yes : default en
 
         if (empty($request->all())) {
-           
+            $request->session()->flush();
             return Inertia::render('Welcome');
 
         } else if ($request->merchantId && $request->orderNumber && $request->userId && $request->vCode) {
+            
+            //check user ID
+            $checkUser = Transaction::where('merchant_id', $merchantId)->where('client_id', $merchantClientId)->whereIn('status', ['pending']);
+            if ($checkUser) {
+                $request->session()->flush();
+                return Inertia::render('Welcome');
+            }
             
             $validateToken = TransactionLog::where('token', $verifyToken)->first();
 
@@ -69,6 +76,7 @@ class TransactionController extends Controller
                     'origin_domain' => $referer,
                 ]);
             } else {
+                $request->session()->flush();
                 return Inertia::render('Welcome');
             }
 
@@ -76,6 +84,7 @@ class TransactionController extends Controller
             $validateVCode = md5($appId->appId . $transactionNo . $merchantId . $appId->secret_key);
 
             if ($validateVCode != $vCode) {
+                $request->session()->flush();
                 return Inertia::render('Welcome');
             }
 
