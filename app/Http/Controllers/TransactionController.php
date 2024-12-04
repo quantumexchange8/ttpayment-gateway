@@ -316,10 +316,6 @@ class TransactionController extends Controller
 
             } else {
                 Log::debug('txID repeated');
-                $transaction->update([
-                    'status' => 'pending',
-                    'transaction_date' => $nowDateTime
-                ]);
             }
 
             return redirect()->route('returnTransaction', ['transaction_id' => $transaction->id]);
