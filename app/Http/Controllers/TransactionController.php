@@ -113,6 +113,13 @@ class TransactionController extends Controller
             // if transaction exist return to it
             if ($findTxnNo) {
 
+                if (Carbon::now() > $findTxnNo->expired_at) {
+                    $findTxnNo->status = 'fail';
+                    $findTxnNo->save();
+
+                    return Inertia::render('Welcome');
+                }
+
                 $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
                 $randomWalletAddress = $merchant->merchantWalletAddress->random();
                 $tokenAddress = $randomWalletAddress->walletAddress->token_address;
