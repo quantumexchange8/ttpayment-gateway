@@ -98,7 +98,6 @@ class CheckDepositStatus extends Command
                                         'transaction_date' => $transaction_date,
                                         'status' => 'success',
                                     ]);
-        
                                     if ($pending->transaction_type === 'deposit') {
                                         $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
         
@@ -125,12 +124,9 @@ class CheckDepositStatus extends Command
                                         'description' => 'unknown symbol',
                                     ]);
                                 }
-                                
         
                                 $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
-                                // $payoutSetting = config('payment-gateway');
         
-                                // $selectedPayout = $payoutSetting['robotec_live'];
                                 $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
                                 $token = Str::random(32);
         
@@ -156,7 +152,10 @@ class CheckDepositStatus extends Command
                                 $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
                                 $response = Http::post($callBackUrl, $params);
                                 
-                                Log::debug('deposit Callback', $response->json());
+                                // Log::debug('deposit Callback', $response);
+                                Log::debug('deposit Callback', [
+                                    'status' => $response->status(),
+                                ]);
                                 
                             } else {
                                 Log::debug('txid', ['transaction_id' => $transaction['transaction_id']]);

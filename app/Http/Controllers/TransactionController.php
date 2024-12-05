@@ -51,78 +51,116 @@ class TransactionController extends Controller
         $lang = $request->query('locale'); // Language ? yes : default en
 
         if (empty($request->all())) {
-           
+            $request->session()->flush();
             return Inertia::render('Welcome');
 
         } else if ($request->merchantId && $request->orderNumber && $request->userId && $request->vCode) {
             
-            $validateToken = TransactionLog::where('token', $verifyToken)->first();
+            //check user ID
+            // $checkUser = Transaction::where('merchant_id', $merchantId)->where('client_id', $merchantClientId)->whereIn('status', ['pending'])->first();
+            // if ($checkUser) {
+            //     $request->session()->flush();
+            //     return Inertia::render('Welcome');
+            // }
+            
+            // $validateToken = TransactionLog::where('token', $verifyToken)->first();
 
             //check validate token
-            if (empty($validateToken)) {
-                $Log = TransactionLog::create([
-                    'merchant_id' => $merchantId,
-                    'client_id' => $merchantClientId,
-                    'client_name' => $merchantClientName,
-                    'transaction_number' => $transactionNo,
-                    'token' => $verifyToken,
-                    'origin_domain' => $referer,
-                ]);
-            } else {
-                return Inertia::render('Welcome');
-            }
+            // if (empty($validateToken)) {
+            //     $Log = TransactionLog::create([
+            //         'merchant_id' => $merchantId,
+            //         'client_id' => $merchantClientId,
+            //         'client_name' => $merchantClientName,
+            //         'transaction_number' => $transactionNo,
+            //         'token' => $verifyToken,
+            //         'origin_domain' => $referer,
+            //     ]);
+            // } else {
+            //     $request->session()->flush();
+            //     return Inertia::render('Welcome');
+            // }
 
             // Check vCode
             $validateVCode = md5($appId->appId . $transactionNo . $merchantId . $appId->secret_key);
 
             if ($validateVCode != $vCode) {
+                // $request->session()->flush();
                 return Inertia::render('Welcome');
             }
 
             // check session and store session token
-            $sessionToken = $request->query('token');
+            // $sessionToken = $request->query('token');
 
-            if (!$request->session()->has('session_token')) {
-                // Store the token in the session
-                $request->session()->put('session_token', $sessionToken);
-            } else {
-                // Retrieve the token from the session
-                $storedToken = $request->session()->get('session_token');
+            // if (!$request->session()->has('session_token')) {
+            //     // Store the token in the session
+            //     $request->session()->put('session_token', $sessionToken);
+            // } else {
+            //     // Retrieve the token from the session
+            //     $storedToken = $request->session()->get('session_token');
     
-                // Validate the token
+            //     // Validate the token
                 
-                if ($sessionToken !== $storedToken) {
-                    $request->session()->flush();
-                    return Inertia::render('Welcome');
-                }
-            }
+            //     if ($sessionToken !== $storedToken) {
+            //         $request->session()->flush();
+            //         return Inertia::render('Welcome');
+            //     }
+            // }
 
             // check transaction number for both crm and gateway exist or not
-            $findTxnNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->first();
-            $findtt_txn = Transaction::where('tt_txn', $tt_txn)->first();
+            $findTxnNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->where('status', 'pending')->first();
+            // $findtt_txn = Transaction::where('tt_txn', $tt_txn)->whereNot('status', 'pending')->first();
             
-            if ($findTxnNo || $findtt_txn) {
-                $request->session()->flush();
-                return Inertia::render('Welcome');
+            // if transaction exist return to it
+            if ($findTxnNo) {
+
+                if (Carbon::now() > $findTxnNo->expired_at) {
+                    $findTxnNo->status = 'fail';
+                    $findTxnNo->save();
+
+                    return Inertia::render('Welcome');
+                }
+
+                $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
+                $randomWalletAddress = $merchant->merchantWalletAddress->random();
+                $tokenAddress = $randomWalletAddress->walletAddress->token_address;
+                
+                // get back existing wallet details
+                $tokenAddress = $findTxnNo->to_wallet;
+                $expirationTime = $findTxnNo->expired_at;
+                $transaction = $findTxnNo;
+                $storedToken = $request->session()->get('session_token');
+                
+                return Inertia::render('Auto/ValidPayment', [
+                    'merchant' => $merchant,
+                    'expirationTime' => $expirationTime,
+                    'transaction' => $transaction,
+                    'tokenAddress' => $tokenAddress,
+                    'storedToken' => $storedToken,
+                    'lang' => $lang,
+                    'referer' => $referer,
+                ]);
+
+                
             } else {
-                $validTime = 15; //minutes
+                // not exist create new
+                // $validTime = 15; //minutes
                 $now = Carbon::now();
     
-                if (!$request->session()->has('payment_expiration_time')) {
-                    // Calculate the expiration time as now + validTime minutes
-                    $expirationTime = $now->copy()->addMinutes($validTime);
+                // if (!$request->session()->has('payment_expiration_time')) {
+                //     // Calculate the expiration time as now + validTime minutes
+                //     $expirationTime = $now->copy()->addMinutes($validTime);
             
-                    // Store the expiration time in the session
-                    $request->session()->put('payment_expiration_time', $expirationTime);
-                } else {
-                    // Retrieve the expiration time from the session
-                    $expirationTime = Carbon::parse($request->session()->get('payment_expiration_time'));
-                }
+                //     // Store the expiration time in the session
+                //     $request->session()->put('payment_expiration_time', $expirationTime);
+                // } else {
+                //     // Retrieve the expiration time from the session
+                //     $expirationTime = Carbon::parse($request->session()->get('payment_expiration_time'));
+                // }
     
                 // check timimg for the session
-                if ($now >= $expirationTime) {
-                    return Inertia::render('Timeout');
-                } else {
+                // if ($now >= $expirationTime) {
+                //     return Inertia::render('Timeout');
+                // } else {
     
                     $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
                     $randomWalletAddress = $merchant->merchantWalletAddress->random();
@@ -145,6 +183,7 @@ class TransactionController extends Controller
                             'tt_txn' => $tt_txn,
                             'to_wallet' => $tokenAddress,
                             'origin_domain' => $referer,
+                            'expired_at' => Carbon::now()->addMinute(20),
                         ]);
     
                         return Inertia::render('Manual/ValidPayment', [
@@ -152,9 +191,11 @@ class TransactionController extends Controller
                             'merchantClientId' => $merchantClientId, //userid
                             'vCode' => $request->vCode, //vCode
                             'orderNumber' => $request->orderNumber, //orderNumber
-                            'expirationTime' => $expirationTime,
+                            'expirationTime' => $transaction->expired_at,
                             'transaction' => $transaction,
                             'tokenAddress' => $tokenAddress,
+                            'lang' => $lang,
+                            'origin_domain' => $referer,
                         ]);
                     } else if ($merchant->deposit_type == 1) {
 
@@ -173,21 +214,22 @@ class TransactionController extends Controller
                             'tt_txn' => $tt_txn,
                             'to_wallet' => $tokenAddress,
                             'origin_domain' => $referer,
+                            'expired_at' => Carbon::now()->addMinute(20),
                         ]);
         
                         return Inertia::render('Auto/ValidPayment', [
                             'merchant' => $merchant,
                             // 'amount' => $amount,
-                            'expirationTime' => $expirationTime,
+                            'expirationTime' => $transaction->expired_at,
                             'transaction' => $transaction,
                             'tokenAddress' => $tokenAddress,
                             'storedToken' => $storedToken,
                             'lang' => $lang,
-                            'referer' => $referer,
+                            'referer' => $referer,0
                         ]);
                     }
     
-                }
+                // }
             }
             
         }
@@ -208,13 +250,12 @@ class TransactionController extends Controller
             $transaction = Transaction::find($request->transaction);
             $nowDateTime = Carbon::now();
             $amount = $transactionData['value'] / 1000000 ;
+            Log::debug('get value', $transactionData);
+
+            $check = Transaction::where('txID', $transactionData['transaction_id'])->first();
             $merchantRateProfile = RateProfile::find($merchant->rate_id);
             $fee = (($amount * $merchantRateProfile->deposit_fee) / 100);
             $symbol = $transactionData['token_info']['symbol'];
-
-            Log::debug('get value', $transactionData);
-            
-            $check = Transaction::where('txID', $transactionData['transaction_id'])->first();
 
             if (empty($check)) {
 
@@ -230,17 +271,15 @@ class TransactionController extends Controller
                         'status' => 'success',
                         'transaction_date' => $nowDateTime
                     ]);
-                    
                     if ($transaction->transaction_type === 'deposit') {
                         $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
         
+                        // wallet
                         $merchantWallet->gross_deposit += $transaction->txn_amount; //gross amount 
                         $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
                         $merchantWallet->total_fee += $gross_fee; // total fee
                         $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
-                        
                         $merchantWallet->total_deposit += $transaction->txn_amount;
-        
                         $merchantWallet->save();
 
                         // callback here
@@ -248,6 +287,7 @@ class TransactionController extends Controller
                         $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $request->referer);
 
                         $vCode = md5($transaction->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+
                         $params = [
                             'merchant_id' => $transaction->merchant_id,
                             'client_id' => $transaction->client_id,
@@ -270,11 +310,13 @@ class TransactionController extends Controller
                         $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
 
                         $response = Http::post($callBackUrl, $params);
-                        if ($response['success']) {
-                            $params['response_status'] = 'success';
-                        } else {
-                            $params['response_status'] = 'failed';
-                        }
+
+                        // if ($response['success']) {
+                        //     $params['response_status'] = 'success';
+                        // } else {
+                        //     $params['response_status'] = 'failed';
+                        // }
+
         
                     } else {
                         $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
@@ -302,28 +344,10 @@ class TransactionController extends Controller
                         'description' => 'unknown symbol',
                     ]);
                 }
+
             } else {
                 Log::debug('txID repeated');
-                $transaction->update([
-                    'status' => 'pending',
-                    'transaction_date' => $nowDateTime
-                ]);
             }
-
-            // OneSignal::sendPush($fields, $message);
-
-            // foreach ($merchant->merchantEmail as $emails) {
-            //     $email = $emails->email;
-
-            //     Notification::route('mail', $email)->notify(new TransactionNotification($merchant->name, $transactionData['transaction_id'], $transactionData['from'], $transactionData['to'], $amount, $transaction->status));
-            // }
-
-
-            // foreach ($merchant->merchantEmail as $emails) {
-            //     $email = $emails->email;
-
-            //     Notification::route('mail', $email)->notify(new TransactionNotification($merchant->name, $transactionData['transaction_id'], $transactionData['from'], $transactionData['to'], $amount, $transaction->status));
-            // }
 
             return redirect()->route('returnTransaction', ['transaction_id' => $transaction->id]);
         } else {
@@ -428,7 +452,6 @@ class TransactionController extends Controller
             'block_time' => $transactionVal->block_time,
             'transfer_amount' => $transactionVal->txn_amount,
             'transaction_number' => $transactionVal->transaction_number,
-            // 'amount' => $transactionVal->amount,
             'status' => $transactionVal->status,
             'payment_method' => $transactionVal->payment_method,
             'created_at' => $transactionVal->created_at,
@@ -444,7 +467,6 @@ class TransactionController extends Controller
         
         
         // $response = Http::post($callBackUrl, $params);
-        // Log::debug($response);
 
         // if ($response['success']) {
         //     $params['response_status'] = 'success';

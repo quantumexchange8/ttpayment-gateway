@@ -32,5 +32,6 @@ class Transaction extends Model
         'block_time',
         'txn_amount',
         'origin_domain',
+        'expired_at',
     ];
 }
