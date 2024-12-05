@@ -42,7 +42,7 @@ class CheckExpiredDeposit extends Command
         foreach ($pendingPayment as $pending) {
 
             $checkPendingTime = $pending->created_at;
-            $expiredTime = $checkPendingTime->addMinutes(15);
+            $expiredTime = $pending->expired_at;
 
             if ($nowTime > $expiredTime) {
                 Log::debug('expired status', ['transaction' => $pending->toArray()]);
