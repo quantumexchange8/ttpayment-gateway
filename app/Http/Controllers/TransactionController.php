@@ -516,7 +516,7 @@ class TransactionController extends Controller
         // $domain = $_SERVER['HTTP_HOST'];
         // $selectedPayout = $payoutSetting['robotec_live'];
 
-        $referer = $request->referer;
+        $referer = $transction->origin_domain;
 
         $payoutSetting = PayoutConfig::where('merchant_id', $transction->merchant_id)->get();
         $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $referer);
