@@ -437,7 +437,7 @@ class TransactionController extends Controller
         // $domain = $_SERVER['HTTP_HOST'];
         
         $payoutSetting = PayoutConfig::where('merchant_id', $merchant)->first();
-        $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $referer);
+        $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $transactionVal->origin_domain);
         
         $vCode = md5($transactionVal->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
         
