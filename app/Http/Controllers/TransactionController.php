@@ -55,30 +55,6 @@ class TransactionController extends Controller
             return Inertia::render('Welcome');
 
         } else if ($request->merchantId && $request->orderNumber && $request->userId && $request->vCode) {
-            
-            //check user ID
-            // $checkUser = Transaction::where('merchant_id', $merchantId)->where('client_id', $merchantClientId)->whereIn('status', ['pending'])->first();
-            // if ($checkUser) {
-            //     $request->session()->flush();
-            //     return Inertia::render('Welcome');
-            // }
-            
-            // $validateToken = TransactionLog::where('token', $verifyToken)->first();
-
-            //check validate token
-            // if (empty($validateToken)) {
-            //     $Log = TransactionLog::create([
-            //         'merchant_id' => $merchantId,
-            //         'client_id' => $merchantClientId,
-            //         'client_name' => $merchantClientName,
-            //         'transaction_number' => $transactionNo,
-            //         'token' => $verifyToken,
-            //         'origin_domain' => $referer,
-            //     ]);
-            // } else {
-            //     $request->session()->flush();
-            //     return Inertia::render('Welcome');
-            // }
 
             // Check vCode
             $validateVCode = md5($appId->appId . $transactionNo . $merchantId . $appId->secret_key);
@@ -88,27 +64,9 @@ class TransactionController extends Controller
                 return Inertia::render('Welcome');
             }
 
-            // check session and store session token
-            // $sessionToken = $request->query('token');
-
-            // if (!$request->session()->has('session_token')) {
-            //     // Store the token in the session
-            //     $request->session()->put('session_token', $sessionToken);
-            // } else {
-            //     // Retrieve the token from the session
-            //     $storedToken = $request->session()->get('session_token');
-    
-            //     // Validate the token
-                
-            //     if ($sessionToken !== $storedToken) {
-            //         $request->session()->flush();
-            //         return Inertia::render('Welcome');
-            //     }
-            // }
-
             // check transaction number for both crm and gateway exist or not
             $findTxnNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->where('status', 'pending')->first();
-            // $findtt_txn = Transaction::where('tt_txn', $tt_txn)->whereNot('status', 'pending')->first();
+            $checkOrderNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->first();
             
             // if transaction exist return to it
             if ($findTxnNo) {
@@ -121,8 +79,6 @@ class TransactionController extends Controller
                 }
 
                 $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
-                $randomWalletAddress = $merchant->merchantWalletAddress->random();
-                $tokenAddress = $randomWalletAddress->walletAddress->token_address;
                 
                 // get back existing wallet details
                 $tokenAddress = $findTxnNo->to_wallet;
@@ -139,95 +95,82 @@ class TransactionController extends Controller
                     'lang' => $lang,
                     'referer' => $referer,
                 ]);
-
                 
             } else {
                 // not exist create new
                 // $validTime = 15; //minutes
                 $now = Carbon::now();
-    
-                // if (!$request->session()->has('payment_expiration_time')) {
-                //     // Calculate the expiration time as now + validTime minutes
-                //     $expirationTime = $now->copy()->addMinutes($validTime);
-            
-                //     // Store the expiration time in the session
-                //     $request->session()->put('payment_expiration_time', $expirationTime);
-                // } else {
-                //     // Retrieve the expiration time from the session
-                //     $expirationTime = Carbon::parse($request->session()->get('payment_expiration_time'));
-                // }
-    
-                // check timimg for the session
-                // if ($now >= $expirationTime) {
-                //     return Inertia::render('Timeout');
-                // } else {
-    
-                    $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
-                    $randomWalletAddress = $merchant->merchantWalletAddress->random();
-                    $tokenAddress = $randomWalletAddress->walletAddress->token_address;
 
-                    $merchantClientId = $request->userId;
-        
-                    if($merchant->deposit_type == 0 ) {
+                if ($checkOrderNo) {
+                    return Inertia::render('Welcome');
+                }
     
-                        $transaction = Transaction::create([
-                            'merchant_id' => $merchantId,
-                            'client_id' => $merchantClientId,
-                            'client_name' => $merchantClientName,
-                            'client_email' => $merchantClientEmail,
-                            'transaction_type' => 'deposit',
-                            'payment_method' => 'manual',
-                            'status' => 'pending',
-                            // 'amount' => $amount,
-                            'transaction_number' => $transactionNo,
-                            'tt_txn' => $tt_txn,
-                            'to_wallet' => $tokenAddress,
-                            'origin_domain' => $referer,
-                            'expired_at' => Carbon::now()->addMinute(15),
-                        ]);
-    
-                        return Inertia::render('Manual/ValidPayment', [
-                            'merchant' => $merchant,
-                            'merchantClientId' => $merchantClientId, //userid
-                            'vCode' => $request->vCode, //vCode
-                            'orderNumber' => $request->orderNumber, //orderNumber
-                            'expirationTime' => $transaction->expired_at,
-                            'transaction' => $transaction,
-                            'tokenAddress' => $tokenAddress,
-                            'lang' => $lang,
-                            'origin_domain' => $referer,
-                        ]);
-                    } else if ($merchant->deposit_type == 1) {
+                $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
+                $randomWalletAddress = $merchant->merchantWalletAddress->random();
+                $tokenAddress = $randomWalletAddress->walletAddress->token_address;
 
-                        $storedToken = $request->session()->get('session_token');
+                $merchantClientId = $request->userId;
     
-                        $transaction = Transaction::create([
-                            'merchant_id' => $merchantId,
-                            'client_id' => $merchantClientId,
-                            'client_name' => $merchantClientName,
-                            'client_email' => $merchantClientEmail,
-                            'transaction_type' => 'deposit',
-                            'payment_method' => 'auto',
-                            'status' => 'pending',
-                            // 'amount' => $amount,
-                            'transaction_number' => $transactionNo,
-                            'tt_txn' => $tt_txn,
-                            'to_wallet' => $tokenAddress,
-                            'origin_domain' => $referer,
-                            'expired_at' => Carbon::now()->addMinute(15),
-                        ]);
-        
-                        return Inertia::render('Auto/ValidPayment', [
-                            'merchant' => $merchant,
-                            // 'amount' => $amount,
-                            'expirationTime' => $transaction->expired_at,
-                            'transaction' => $transaction,
-                            'tokenAddress' => $tokenAddress,
-                            'storedToken' => $storedToken,
-                            'lang' => $lang,
-                            'referer' => $referer,0
-                        ]);
-                    }
+                if($merchant->deposit_type == 0 ) {
+
+                    $transaction = Transaction::create([
+                        'merchant_id' => $merchantId,
+                        'client_id' => $merchantClientId,
+                        'client_name' => $merchantClientName,
+                        'client_email' => $merchantClientEmail,
+                        'transaction_type' => 'deposit',
+                        'payment_method' => 'manual',
+                        'status' => 'pending',
+                        // 'amount' => $amount,
+                        'transaction_number' => $transactionNo,
+                        'tt_txn' => RunningNumberService::getID('transaction'),
+                        'to_wallet' => $tokenAddress,
+                        'origin_domain' => $referer,
+                        'expired_at' => Carbon::now()->addMinute(20),
+                    ]);
+
+                    return Inertia::render('Manual/ValidPayment', [
+                        'merchant' => $merchant,
+                        'merchantClientId' => $merchantClientId, //userid
+                        'vCode' => $request->vCode, //vCode
+                        'orderNumber' => $request->orderNumber, //orderNumber
+                        'expirationTime' => $transaction->expired_at,
+                        'transaction' => $transaction,
+                        'tokenAddress' => $tokenAddress,
+                        'lang' => $lang,
+                        'origin_domain' => $referer,
+                    ]);
+                } else if ($merchant->deposit_type == 1) {
+
+                    $storedToken = $request->session()->get('session_token');
+
+                    $transaction = Transaction::create([
+                        'merchant_id' => $merchantId,
+                        'client_id' => $merchantClientId,
+                        'client_name' => $merchantClientName,
+                        'client_email' => $merchantClientEmail,
+                        'transaction_type' => 'deposit',
+                        'payment_method' => 'auto',
+                        'status' => 'pending',
+                        // 'amount' => $amount,
+                        'transaction_number' => $transactionNo,
+                        'tt_txn' => RunningNumberService::getID('transaction'),
+                        'to_wallet' => $tokenAddress,
+                        'origin_domain' => $referer,
+                        'expired_at' => Carbon::now()->addMinute(20),
+                    ]);
+    
+                    return Inertia::render('Auto/ValidPayment', [
+                        'merchant' => $merchant,
+                        // 'amount' => $amount,
+                        'expirationTime' => $transaction->expired_at,
+                        'transaction' => $transaction,
+                        'tokenAddress' => $tokenAddress,
+                        'storedToken' => $storedToken,
+                        'lang' => $lang,
+                        'referer' => $referer,
+                    ]);
+                }
     
                 // }
             }
