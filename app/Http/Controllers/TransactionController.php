@@ -38,7 +38,7 @@ class TransactionController extends Controller
 
         $referer = request()->headers->get('referer');
 
-        // $amount = $request->query('amount') / 1000000;
+        $amount = $request->query('amount');
         $transactionNo = $request->query('orderNumber'); // TXN00000001 or no need
         $merchantId = $request->query('merchantId'); // MID000001
         $merchantClientId = $request->query('userId'); // Merchant client user id
@@ -54,10 +54,10 @@ class TransactionController extends Controller
             $request->session()->flush();
             return Inertia::render('Welcome');
 
-        } else if ($request->merchantId && $request->orderNumber && $request->userId && $request->vCode) {
+        } else if ($request->merchantId && $request->orderNumber && $request->userId && $request->vCode && $amount) {
 
             // Check vCode
-            $validateVCode = md5($appId->appId . $transactionNo . $merchantId . $appId->secret_key);
+            $validateVCode = md5($amount . $appId->appId . $transactionNo . $merchantId . $appId->secret_key);
 
             if ($validateVCode != $vCode) {
                 // $request->session()->flush();
@@ -65,7 +65,7 @@ class TransactionController extends Controller
             }
 
             // check transaction number for both crm and gateway exist or not
-            $findTxnNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->where('status', 'pending')->first();
+            $findTxnNo = Transaction::where('merchant_id', $merchantId)->where('amount', $amount)->where('transaction_number', $transactionNo)->where('status', 'pending')->first();
             $checkOrderNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->first();
             
             // if transaction exist return to it
@@ -121,7 +121,7 @@ class TransactionController extends Controller
                         'transaction_type' => 'deposit',
                         'payment_method' => 'manual',
                         'status' => 'pending',
-                        // 'amount' => $amount,
+                        'amount' => $amount,
                         'transaction_number' => $transactionNo,
                         'tt_txn' => RunningNumberService::getID('transaction'),
                         'to_wallet' => $tokenAddress,
@@ -152,7 +152,7 @@ class TransactionController extends Controller
                         'transaction_type' => 'deposit',
                         'payment_method' => 'auto',
                         'status' => 'pending',
-                        // 'amount' => $amount,
+                        'amount' => $amount,
                         'transaction_number' => $transactionNo,
                         'tt_txn' => RunningNumberService::getID('transaction'),
                         'to_wallet' => $tokenAddress,
@@ -162,7 +162,7 @@ class TransactionController extends Controller
     
                     return Inertia::render('Auto/ValidPayment', [
                         'merchant' => $merchant,
-                        // 'amount' => $amount,
+                        'amount' => $amount,
                         'expirationTime' => $transaction->expired_at,
                         'transaction' => $transaction,
                         'tokenAddress' => $tokenAddress,
@@ -193,6 +193,7 @@ class TransactionController extends Controller
             $transaction = Transaction::find($request->transaction);
             $nowDateTime = Carbon::now();
             $amount = $transactionData['value'] / 1000000 ;
+            $inputAmount = $transaction->amount;
             Log::debug('get value', $transactionData);
 
             $check = Transaction::where('txID', $transactionData['transaction_id'])->first();
@@ -229,7 +230,7 @@ class TransactionController extends Controller
                         $payoutSetting = PayoutConfig::where('merchant_id', $request->merchantId)->first();
                         $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $request->referer);
 
-                        $vCode = md5($transaction->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+                        $vCode = md5($transaction->amount . $transaction->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
 
                         $params = [
                             'merchant_id' => $transaction->merchant_id,
@@ -240,6 +241,7 @@ class TransactionController extends Controller
                             'txID' => $transaction->txID,
                             'block_time' => $transaction->block_time,
                             'transfer_amount' => $transaction->txn_amount,
+                            'input_amount' => $inputAmount,
                             'transaction_number' => $transaction->transaction_number,
                             'status' => $transaction->status,
                             'payment_method' => $transaction->payment_method,
@@ -382,7 +384,7 @@ class TransactionController extends Controller
         $payoutSetting = PayoutConfig::where('merchant_id', $merchant)->first();
         $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $referer);
         
-        $vCode = md5($transactionVal->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+        $vCode = md5($transactionVal->amount . $transactionVal->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
         
 
         $params = [
@@ -394,6 +396,7 @@ class TransactionController extends Controller
             'txID' => $transactionVal->txID,
             'block_time' => $transactionVal->block_time,
             'transfer_amount' => $transactionVal->txn_amount,
+            'input_amount' => $transactionVal->amount,
             'transaction_number' => $transactionVal->transaction_number,
             'status' => $transactionVal->status,
             'payment_method' => $transactionVal->payment_method,
