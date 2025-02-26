@@ -68,8 +68,8 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
     useEffect(() => {
             const fetchBlock = async () => {
                 try {
-                    // const response = await fetch('https://api.trongrid.io/walletsolidity/getnowblock');
-                    const response = await fetch(`https://api-testnet.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=${apikey}`);
+                    // const response = await fetch(`https://api.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=${apikey}`);
+                    const response = await fetch(`https://api-testnet.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=after&apikey=${apikey}`);
                     const result = await response.json();
 
                     setBlockTimestamp(result.result);
@@ -86,21 +86,25 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
         // let pollingInterval;
         const fetchTransactions = async () => {
             try {
-                // const url = `https://api.bscscan.com/api?module=account&action=tokentx&address=${tokenAddress}&page=1&sort=desc&apikey=${api_key}`;
-                const url = `https://api-testnet.bscscan.com/api?module=account&action=tokentx&address=0x9B959f875c5D69fbeDFd85d6518A55B58E054E7F&page=1&sort=desc&startblock=${blockTimestamp}&apikey=${apikey}`;
-                
+                // const url = `https://api.bscscan.com/api?module=account&action=txlist&address=${tokenAddress}&page=1&sort=asc&startblock=${blockTimestamp}&apikey=${apikey}`;
+                const url = `https://api-testnet.bscscan.com/api?module=account&action=txlist&address=${tokenAddress}&page=1&sort=asc&startblock=${blockTimestamp}&apikey=${apikey}`;
+
                 const response = await fetch(url);
                 const result = await response.json();
-                console.log(result);
-                if ((result.data != null) && (result.data.length === 1)) {
-                    const latestTransaction = result.data[0];
-                    setTxid(latestTransaction.transaction_id);
+
+                console.log('result: ', result);
+
+                if (result.result.length >= 1 && result.status === "1") {
+                    const latestTransaction = result.result[0];
+                    setTxid(latestTransaction.hash);
                     setLatestTransaction(latestTransaction);
 
-                    setData('txid', latestTransaction.transaction_id);
+                    setData('txid', latestTransaction.hash);
                     setData('latestTransaction', latestTransaction);
 
-                    if (data.latestTransaction.transaction_id) {
+                    console.log('latestTransaction.result', data.latestTransaction)
+
+                    if (data.latestTransaction.hash) {
                         post('/updateTransaction', {
                             preserveScroll: true,
                             onSuccess: () => {
@@ -171,7 +175,7 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
                 </div>
                 <div className="flex flex-col items-center gap-2">
                     <div className="text-sm font-medium">
-                        {t('please_ensure')}<span className="font-bold">USDT TRC 20</span>.
+                        {t('please_ensure')}<span className="font-bold">BEP 20</span>.
                     </div>
                     {/* 請確保您發送的代幣是<span className="font-bold">USDT TRC 20</span>. */}
                     <div className="flex flex-col text-sm font-bold text-center text-[#ef4444] w-full">
