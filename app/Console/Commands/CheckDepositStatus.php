@@ -50,9 +50,9 @@ class CheckDepositStatus extends Command
 
             $tokenAddress = $pending->to_wallet;
             $createdAt = $pending->created_at;
-            $expiredAt = Carbon::parse($pending->expired_at);
+            // $expiredAt = Carbon::parse($pending->expired_at);
             $min_timeStamp = $createdAt->timestamp * 1000;
-            $max_timeStamp = $expiredAt->timestamp * 1000;
+            $blockTimeStamp = $createdAt->timestamp;
             $merchantID = $pending->merchant_id;
             $merchant = Merchant::find($merchantID);
             $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
@@ -181,7 +181,7 @@ class CheckDepositStatus extends Command
                 $getStartBlock = Http::get('https://api-testnet.bscscan.com/api', [
                     'module' => 'block',
                     'action' => 'getblocknobytime',
-                    'timestamp' => $min_timeStamp,
+                    'timestamp' => $blockTimeStamp,
                     'closest' => 'after',
                     'apikey' => $this->apiKey,
                 ]);
@@ -192,7 +192,8 @@ class CheckDepositStatus extends Command
                     'address' => $tokenAddress,
                     'page' => 1,
                     'sort' => 'desc',
-                    'startblock' => $getStartBlock,
+                    'startblock' => $getStartBlock['result'],
+                    'endblock' => 99999999,
                     'apikey' => $this->apiKey,
                 ]);
 
@@ -205,7 +206,8 @@ class CheckDepositStatus extends Command
                         'address' => $tokenAddress,
                         'page' => 1,
                         'sort' => 'desc',
-                        'startblock' => $getStartBlock,
+                        'startblock' => $getStartBlock['result'],
+                        'endblock' => 99999999,
                         'apikey' => $this->apiKey,
                     ],
                 ]);
@@ -213,7 +215,7 @@ class CheckDepositStatus extends Command
                 if ($response->successful()) {
                     $transactionInfo = $response->json();
 
-                    if (!empty($transactionInfo['data'])) {
+                    if (!empty($transactionInfo['result'])) {
                         foreach($transactionInfo as $transactions) {
                             Log::debug('bep-20 transactions', $transactions);
 
