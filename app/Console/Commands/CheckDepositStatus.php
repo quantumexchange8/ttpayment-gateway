@@ -50,7 +50,7 @@ class CheckDepositStatus extends Command
 
             $tokenAddress = $pending->to_wallet;
             $createdAt = $pending->created_at;
-            $expiredAt = $pending->expired_at;
+            $expiredAt = Carbon::parse($pending->expired_at);
             $min_timeStamp = $createdAt->timestamp * 1000;
             $max_timeStamp = $expiredAt->timestamp * 1000;
             $merchantID = $pending->merchant_id;
