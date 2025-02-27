@@ -186,26 +186,29 @@ class CheckDepositStatus extends Command
                     'apikey' => $this->apiKey,
                 ]);
 
-                $getEndBlock = Http::get('https://api-testnet.bscscan.com/api', [
-                    'module' => 'block',
-                    'action' => 'getblocknobytime',
-                    'timestamp' => $max_timeStamp,
-                    'closest' => 'before',
-                    'apikey' => $this->apiKey,
-                ]);
-
                 $response = Http::get('https://api-testnet.bscscan.com/api', [
                     'module' => 'account',
                     'action' => 'txlist',
                     'address' => $tokenAddress,
                     'page' => 1,
-                    'sort' => 'asc',
+                    'sort' => 'desc',
                     'startblock' => $getStartBlock,
-                    'endblock' => $getEndBlock,
                     'apikey' => $this->apiKey,
                 ]);
 
                 Log::debug('Response received', $response->json());
+                Log::debug('Response URL', [
+                    'url' => 'https://api-testnet.bscscan.com/api',
+                    'params' => [
+                        'module' => 'account',
+                        'action' => 'txlist',
+                        'address' => $tokenAddress,
+                        'page' => 1,
+                        'sort' => 'desc',
+                        'startblock' => $getStartBlock,
+                        'apikey' => $this->apiKey,
+                    ],
+                ]);
 
                 if ($response->successful()) {
                     $transactionInfo = $response->json();
