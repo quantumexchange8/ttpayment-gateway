@@ -180,48 +180,67 @@ class CheckDepositStatus extends Command
 
             if ($pending->payment_type === 'bep-20') {
                 
-                if ($this->production === 'production') {
+                // if ($this->production === 'production') {
 
-                    $getStartBlock = Http::get('https://api.bscscan.com/api', [
-                        'module' => 'block',
-                        'action' => 'getblocknobytime',
-                        'timestamp' => $blockTimeStamp,
-                        'closest' => 'after',
-                        'apikey' => $this->apiKey,
-                    ]);
+                //     $getStartBlock = Http::get('https://api.bscscan.com/api', [
+                //         'module' => 'block',
+                //         'action' => 'getblocknobytime',
+                //         'timestamp' => $blockTimeStamp,
+                //         'closest' => 'after',
+                //         'apikey' => $this->apiKey,
+                //     ]);
     
-                    $response = Http::get('https://api.bscscan.com/api', [
-                        'module' => 'account',
-                        'action' => 'txlist',
-                        'address' => $tokenAddress,
-                        'page' => 1,
-                        'sort' => 'desc',
-                        'startblock' => $getStartBlock['result'],
-                        'endblock' => 99999999,
-                        'apikey' => $this->apiKey,
-                    ]);
+                //     $response = Http::get('https://api.bscscan.com/api', [
+                //         'module' => 'account',
+                //         'action' => 'txlist',
+                //         'address' => $tokenAddress,
+                //         'page' => 1,
+                //         'sort' => 'desc',
+                //         'startblock' => $getStartBlock['result'],
+                //         'endblock' => 99999999,
+                //         'apikey' => $this->apiKey,
+                //     ]);
                     
-                } else {
-                    $getStartBlock = Http::get('https://api-testnet.bscscan.com/api', [
-                        'module' => 'block',
-                        'action' => 'getblocknobytime',
-                        'timestamp' => $blockTimeStamp,
-                        'closest' => 'after',
-                        'apikey' => $this->apiKey,
-                    ]);
+                // } else {
+                //     $getStartBlock = Http::get('https://api-testnet.bscscan.com/api', [
+                //         'module' => 'block',
+                //         'action' => 'getblocknobytime',
+                //         'timestamp' => $blockTimeStamp,
+                //         'closest' => 'after',
+                //         'apikey' => $this->apiKey,
+                //     ]);
     
-                    $response = Http::get('https://api-testnet.bscscan.com/api', [
-                        'module' => 'account',
-                        'action' => 'txlist',
-                        'address' => $tokenAddress,
-                        'page' => 1,
-                        'sort' => 'desc',
-                        'startblock' => $getStartBlock['result'],
-                        'endblock' => 99999999,
-                        'apikey' => $this->apiKey,
-                    ]);
+                //     $response = Http::get('https://api-testnet.bscscan.com/api', [
+                //         'module' => 'account',
+                //         'action' => 'txlist',
+                //         'address' => $tokenAddress,
+                //         'page' => 1,
+                //         'sort' => 'desc',
+                //         'startblock' => $getStartBlock['result'],
+                //         'endblock' => 99999999,
+                //         'apikey' => $this->apiKey,
+                //     ]);
 
-                }
+                // }
+
+                $getStartBlock = Http::get('https://api-testnet.bscscan.com/api', [
+                    'module' => 'block',
+                    'action' => 'getblocknobytime',
+                    'timestamp' => $blockTimeStamp,
+                    'closest' => 'after',
+                    'apikey' => $this->apiKey,
+                ]);
+
+                $response = Http::get('https://api-testnet.bscscan.com/api', [
+                    'module' => 'account',
+                    'action' => 'txlist',
+                    'address' => $tokenAddress,
+                    'page' => 1,
+                    'sort' => 'desc',
+                    'startblock' => $getStartBlock['result'],
+                    'endblock' => 99999999,
+                    'apikey' => $this->apiKey,
+                ]);
 
                 Log::debug('Response received', $response->json());
 
