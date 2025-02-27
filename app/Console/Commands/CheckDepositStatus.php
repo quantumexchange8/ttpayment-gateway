@@ -24,6 +24,7 @@ class CheckDepositStatus extends Command
      */
     protected $signature = 'check:deposit-status';
     protected $apiKey;
+    protected $production;
 
     /**
      * The console command description.
@@ -44,6 +45,7 @@ class CheckDepositStatus extends Command
                     ->get();
 
         $this->apiKey = env('BSCSCAN_API_KEY');
+        $this->production = env('APP_ENV');
         
         foreach ($pendingPayments as $pending) {
             Log::debug('all pending data', ['transaction' => $pending->toArray()]);
@@ -177,30 +179,18 @@ class CheckDepositStatus extends Command
             }
 
             if ($pending->payment_type === 'bep-20') {
+                
+                if ($this->production === 'production') {
 
-                $getStartBlock = Http::get('https://api-testnet.bscscan.com/api', [
-                    'module' => 'block',
-                    'action' => 'getblocknobytime',
-                    'timestamp' => $blockTimeStamp,
-                    'closest' => 'after',
-                    'apikey' => $this->apiKey,
-                ]);
-
-                $response = Http::get('https://api-testnet.bscscan.com/api', [
-                    'module' => 'account',
-                    'action' => 'txlist',
-                    'address' => $tokenAddress,
-                    'page' => 1,
-                    'sort' => 'desc',
-                    'startblock' => $getStartBlock['result'],
-                    'endblock' => 99999999,
-                    'apikey' => $this->apiKey,
-                ]);
-
-                Log::debug('Response received', $response->json());
-                Log::debug('Response URL', [
-                    'url' => 'https://api-testnet.bscscan.com/api',
-                    'params' => [
+                    $getStartBlock = Http::get('https://api.bscscan.com/api', [
+                        'module' => 'block',
+                        'action' => 'getblocknobytime',
+                        'timestamp' => $blockTimeStamp,
+                        'closest' => 'after',
+                        'apikey' => $this->apiKey,
+                    ]);
+    
+                    $response = Http::get('https://api.bscscan.com/api', [
                         'module' => 'account',
                         'action' => 'txlist',
                         'address' => $tokenAddress,
@@ -209,16 +199,41 @@ class CheckDepositStatus extends Command
                         'startblock' => $getStartBlock['result'],
                         'endblock' => 99999999,
                         'apikey' => $this->apiKey,
-                    ],
-                ]);
+                    ]);
+                    
+                } else {
+                    $getStartBlock = Http::get('https://api-testnet.bscscan.com/api', [
+                        'module' => 'block',
+                        'action' => 'getblocknobytime',
+                        'timestamp' => $blockTimeStamp,
+                        'closest' => 'after',
+                        'apikey' => $this->apiKey,
+                    ]);
+    
+                    $response = Http::get('https://api-testnet.bscscan.com/api', [
+                        'module' => 'account',
+                        'action' => 'txlist',
+                        'address' => $tokenAddress,
+                        'page' => 1,
+                        'sort' => 'desc',
+                        'startblock' => $getStartBlock['result'],
+                        'endblock' => 99999999,
+                        'apikey' => $this->apiKey,
+                    ]);
+
+                }
+
+                Log::debug('Response received', $response->json());
 
                 if ($response->successful()) {
                     $transactionInfo = $response->json();
 
                     if (!empty($transactionInfo['result'])) {
                         foreach($transactionInfo['result'] as $transaction) {
-                            Log::debug('bep-20 transactions', ['transactions' => $transaction]);
-                            Log::debug('bep-20 txid', ['transaction_id' => $transaction['hash']]);
+                            Log::debug('bep-20 transactions', [
+                                'transactions' => $transaction, 
+                                'transaction_id' => $transaction['hash'] ?? 'N/A',
+                            ]);
 
                             if (Transaction::where('txID', $transaction['hash'])->doesntExist()) {
                                 Log::debug('Transaction ID does not exist');
@@ -293,13 +308,6 @@ class CheckDepositStatus extends Command
                             } else {
                                 Log::debug('bep-20 txid', ['transaction_id' => $transaction['hash']]);
                             }
-
-                            // foreach($transactions as $transaction) {
-                            //     Log::debug('bep-20 data', ['transaction' => $transaction]);
-                               
-
-                                
-                            // }
                         }
                     }
                 }
