@@ -165,6 +165,8 @@ class TransactionController extends Controller
                 } else if ($merchant->deposit_type == 1) {
 
                     $storedToken = $request->session()->get('session_token');
+
+                    Log::debug('referral ', $referer, $paymentMethod);
     
                     if ($paymentMethod->payment_method === 'bep-20') {
 
