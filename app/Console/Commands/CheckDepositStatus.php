@@ -216,85 +216,90 @@ class CheckDepositStatus extends Command
                     $transactionInfo = $response->json();
 
                     if (!empty($transactionInfo['result'])) {
-                        foreach($transactionInfo as $transactions) {
-                            Log::debug('bep-20 transactions', $transactions);
+                        foreach($transactionInfo['result'] as $transactions) {
+                            Log::debug('bep-20 transactions', ['transactions' => $transactions]);
+                            Log::debug('bep-20 txid', ['transaction_id' => $transaction['hash']]);
 
-                            foreach($transactions as $transaction) {
-                                Log::debug('bep-20 data', $transaction);
-                                Log::debug('bep-20 txid', ['transaction_id' => $transaction['hash']]);
+                            if (Transaction::where('txID', $transaction['hash'])->doesntExist()) {
+                                Log::debug('Transaction ID does not exist');
 
-                                if (Transaction::where('txID', $transaction['hash'])->doesntExist()) {
-                                    Log::debug('Transaction ID does not exist');
+                                $txnAmount = $transaction['value'] / 1000000000000000000;
+                                $timestamp = $transaction['timeStamp'];
+                                $transaction_date = Carbon::createFromTimestamp($timestamp)->setTimezone('GMT+8');
+                                $merchantRateProfile = RateProfile::find($merchant->rate_id);
+                                $fee = (($txnAmount * $merchantRateProfile->deposit_fee) / 100);
 
-                                    $txnAmount = $transaction['value'] / 1000000000000000000;
-                                    $timestamp = $transaction['timeStamp'];
-                                    $transaction_date = Carbon::createFromTimestamp($timestamp)->setTimezone('GMT+8');
-                                    $merchantRateProfile = RateProfile::find($merchant->rate_id);
-                                    $fee = (($txnAmount * $merchantRateProfile->deposit_fee) / 100);
+                                $pending->update([
+                                    'from_wallet' => $transaction['from'],
+                                    'txID' => $transaction['hash'],
+                                    'block_time' => $transaction['timeStamp'],
+                                    'block_number' => $transaction['blockNumber'],
+                                    'txn_amount' => $txnAmount,
+                                    'fee' => $fee,
+                                    'total_amount' => $txnAmount - $fee,
+                                    'transaction_date' => $transaction_date,
+                                    'status' => 'success',
+                                    'txreceipt_status' => $transaction['txreceipt_status'],
+                                ]);
 
-                                    $pending->update([
-                                        'from_wallet' => $transaction['from'],
-                                        'txID' => $transaction['hash'],
-                                        'block_time' => $transaction['timeStamp'],
-                                        'block_number' => $transaction['blockNumber'],
-                                        'txn_amount' => $txnAmount,
-                                        'fee' => $fee,
-                                        'total_amount' => $txnAmount - $fee,
-                                        'transaction_date' => $transaction_date,
-                                        'status' => 'success',
-                                    ]);
-
-                                    if ($pending->transaction_type === 'deposit') {
-                                        $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
-        
-                                        $merchantWallet->gross_deposit += $txnAmount; //gross amount 
-                                        $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
-                                        $merchantWallet->total_fee += $gross_fee; // total fee
-                                        $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
-                                        
-                                        $merchantWallet->total_deposit += $txnAmount;
-        
-                                        $merchantWallet->save();
-        
-                                    }
-
-                                    $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
-            
-                                    $vCode = md5($pending->amount . $pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
-                                    $token = Str::random(32);
-            
-                                    $params = [
-                                        'merchant_id' => $pending->merchant_id,
-                                        'client_id' => $pending->client_id,
-                                        'transaction_type' => $pending->transaction_type,
-                                        'from_wallet' => $pending->from_wallet,
-                                        'to_wallet' => $pending->to_wallet,
-                                        'txID' => $pending->txID,
-                                        'block_time' => $pending->block_time,
-                                        'block_number' => $pending->block_number,
-                                        'transfer_amount' => $pending->txn_amount,
-                                        'transaction_number' => $pending->transaction_number,
-                                        'amount' => $pending->amount,
-                                        'status' => $pending->status,
-                                        'payment_method' => $pending->payment_method,
-                                        'created_at' => $pending->created_at,
-                                        'description' => $pending->description,
-                                        'vCode' => $vCode,
-                                        'token' => $token,
-                                    ];
-            
-                                    $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
-                                    $response = Http::post($callBackUrl, $params);
+                                if ($pending->transaction_type === 'deposit') {
+                                    $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
+    
+                                    $merchantWallet->gross_deposit += $txnAmount; //gross amount 
+                                    $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
+                                    $merchantWallet->total_fee += $gross_fee; // total fee
+                                    $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
                                     
-                                    // Log::debug('deposit Callback', $response);
-                                    Log::debug('deposit Callback', [
-                                        'status' => $response->status(),
-                                    ]);
-
-                                } else {
-                                    Log::debug('bep-20 txid', ['transaction_id' => $transaction['hash']]);
+                                    $merchantWallet->total_deposit += $txnAmount;
+    
+                                    $merchantWallet->save();
+    
                                 }
+
+                                $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
+        
+                                $vCode = md5($pending->amount . $pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
+                                $token = Str::random(32);
+        
+                                $params = [
+                                    'merchant_id' => $pending->merchant_id,
+                                    'client_id' => $pending->client_id,
+                                    'transaction_type' => $pending->transaction_type,
+                                    'from_wallet' => $pending->from_wallet,
+                                    'to_wallet' => $pending->to_wallet,
+                                    'txID' => $pending->txID,
+                                    'block_time' => $pending->block_time,
+                                    'block_number' => $pending->block_number,
+                                    'transfer_amount' => $pending->txn_amount,
+                                    'transaction_number' => $pending->transaction_number,
+                                    'amount' => $pending->amount,
+                                    'status' => $pending->status,
+                                    'txreceipt_status' => $pending->txreceipt_status,
+                                    'payment_method' => $pending->payment_method,
+                                    'created_at' => $pending->created_at,
+                                    'description' => $pending->description,
+                                    'vCode' => $vCode,
+                                    'token' => $token,
+                                ];
+        
+                                $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
+                                $response = Http::post($callBackUrl, $params);
+                                
+                                // Log::debug('deposit Callback', $response);
+                                Log::debug('deposit Callback', [
+                                    'status' => $response->status(),
+                                ]);
+
+                            } else {
+                                Log::debug('bep-20 txid', ['transaction_id' => $transaction['hash']]);
                             }
+
+                            // foreach($transactions as $transaction) {
+                            //     Log::debug('bep-20 data', ['transaction' => $transaction]);
+                               
+
+                                
+                            // }
                         }
                     }
                 }
