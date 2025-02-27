@@ -216,8 +216,8 @@ class CheckDepositStatus extends Command
                     $transactionInfo = $response->json();
 
                     if (!empty($transactionInfo['result'])) {
-                        foreach($transactionInfo['result'] as $transactions) {
-                            Log::debug('bep-20 transactions', ['transactions' => $transactions]);
+                        foreach($transactionInfo['result'] as $transaction) {
+                            Log::debug('bep-20 transactions', ['transactions' => $transaction]);
                             Log::debug('bep-20 txid', ['transaction_id' => $transaction['hash']]);
 
                             if (Transaction::where('txID', $transaction['hash'])->doesntExist()) {
