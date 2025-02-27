@@ -39,6 +39,7 @@ class TransactionController extends Controller
         Log::debug('Incoming Data', $datas);
 
         $referer = request()->headers->get('referer');
+        Log::debug('Incoming referer', $referer);
 
         $amount = $request->query('amount');
         $transactionNo = $request->query('orderNumber'); // TXN00000001 or no need
@@ -165,8 +166,6 @@ class TransactionController extends Controller
                 } else if ($merchant->deposit_type == 1) {
 
                     $storedToken = $request->session()->get('session_token');
-
-                    Log::debug('referral ', $referer, $paymentMethod);
     
                     if ($paymentMethod->payment_method === 'bep-20') {
 
