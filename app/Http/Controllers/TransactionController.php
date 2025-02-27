@@ -39,7 +39,7 @@ class TransactionController extends Controller
         Log::debug('Incoming Data', $datas);
 
         $referer = request()->headers->get('referer');
-        Log::debug('Incoming referer', $referer);
+        Log::debug('Incoming referer', ['referer' => $referer]);
 
         $amount = $request->query('amount');
         $transactionNo = $request->query('orderNumber'); // TXN00000001 or no need
