@@ -296,6 +296,12 @@ class TransactionController extends Controller
                             $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $request->referer);
 
                             $vCode = md5($transaction->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+                            Log::debug('md5', [
+                                'vcode' => $vCode,
+                                'txn_no' => $transaction->transaction_number,
+                                'appId' => $matchingPayoutSetting->appId,
+                                'merchant_id' => $matchingPayoutSetting->merchant_id,
+                            ]);
 
                             $params = [
                                 'merchant_id' => $transaction->merchant_id,
