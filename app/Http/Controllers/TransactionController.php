@@ -54,6 +54,8 @@ class TransactionController extends Controller
         $lang = $request->query('locale'); // Language ? yes : default en
         $this->apiKey = env('BSCSCAN_API_KEY');
 
+        Log::debug('api key ', ['api key' => $this->apiKey]);
+
         if (empty($request->all())) {
             $request->session()->flush();
             return Inertia::render('Welcome');
