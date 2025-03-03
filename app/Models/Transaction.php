@@ -33,5 +33,8 @@ class Transaction extends Model
         'txn_amount',
         'origin_domain',
         'expired_at',
+        'txreceipt_status',
+        'block_number',
+        'payment_type',
     ];
 }
