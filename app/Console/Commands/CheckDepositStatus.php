@@ -135,7 +135,7 @@ class CheckDepositStatus extends Command
             
                                     $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
             
-                                    $vCode = md5($pending->amount . $pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
+                                    $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
                                     $token = Str::random(32);
             
                                     $params = [
@@ -292,7 +292,7 @@ class CheckDepositStatus extends Command
 
                                 $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
         
-                                $vCode = md5($pending->amount . $pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
+                                $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
                                 $token = Str::random(32);
         
                                 $params = [
@@ -310,6 +310,7 @@ class CheckDepositStatus extends Command
                                     'status' => $pending->status,
                                     'txreceipt_status' => $pending->txreceipt_status,
                                     'payment_method' => $pending->payment_method,
+                                    'payment_type' => $pending->payment_type,
                                     'created_at' => $pending->created_at,
                                     'description' => $pending->description,
                                     'vCode' => $vCode,

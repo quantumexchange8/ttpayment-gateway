@@ -293,7 +293,7 @@ class TransactionController extends Controller
                             $payoutSetting = PayoutConfig::where('merchant_id', $request->merchantId)->first();
                             $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $request->referer);
 
-                            $vCode = md5($transaction->amount . $transaction->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+                            $vCode = md5($transaction->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
 
                             $params = [
                                 'merchant_id' => $transaction->merchant_id,
@@ -401,7 +401,7 @@ class TransactionController extends Controller
                         $payoutSetting = PayoutConfig::where('merchant_id', $request->merchantId)->first();
                         $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $request->referer);
 
-                        $vCode = md5($transaction->amount . $transaction->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+                        $vCode = md5($transaction->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
 
                         $params = [
                             'merchant_id' => $transaction->merchant_id,
@@ -520,7 +520,7 @@ class TransactionController extends Controller
         $payoutSetting = PayoutConfig::where('merchant_id', $merchant)->first();
         $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $referer);
         
-        $vCode = md5($transactionVal->amount . $transactionVal->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+        $vCode = md5($transactionVal->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
         
 
         $params = [
