@@ -273,8 +273,8 @@ class TransactionController extends Controller
                     if ($symbol === "USDT") {
 
                         $transfer_amount = $transactionData['value'] / 1000000 ; // 100
-                        $start_range = $transfer_amount - 15; //85
-                        $end_range = $transfer_amount + 15; // 115
+                        $start_range = $transfer_amount - $paymentMethod->diff_amount; //85
+                        $end_range = $transfer_amount + $paymentMethod->diff_amount; // 115
 
                         if ($inputAmount >= $start_range && $inputAmount <= $end_range) {
                             $transaction->update([
@@ -415,8 +415,8 @@ class TransactionController extends Controller
                 if (empty($check)) {
 
                     $transfer_amount = $transactionData['value'] / 1000000 ; // 100
-                    $start_range = $transfer_amount - 15; //85
-                    $end_range = $transfer_amount + 15; // 115
+                    $start_range = $transfer_amount - $paymentMethod->diff_amount; //85
+                    $end_range = $transfer_amount + $paymentMethod->diff_amount; // 115
 
                     if ($inputAmount >= $start_range && $inputAmount <= $end_range) {
                         $transaction->update([
