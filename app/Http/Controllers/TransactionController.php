@@ -73,7 +73,7 @@ class TransactionController extends Controller
             // check transaction number for both crm and gateway exist or not
             $findTxnNo = Transaction::where('merchant_id', $merchantId)->where('amount', $amount)->where('transaction_number', $transactionNo)->where('status', 'pending')->first();
             $checkOrderNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->first();
-            $paymentMethod = PayoutConfig::where('merchant_id', $merchantId)->where('live_paymentUrl', $referer)->first();
+            $paymentMethod = PayoutConfig::where('merchant_id', $merchantId)->where('live_paymentUrl', 'http://127.0.0.1:8010/')->first();
 
             // if transaction exist return to it
             if ($findTxnNo) {
@@ -292,15 +292,22 @@ class TransactionController extends Controller
                             $merchantWallet->save();
 
                             // callback here
-                            $payoutSetting = PayoutConfig::where('merchant_id', $request->merchantId)->first();
-                            $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $request->referer);
+                            $payoutSetting = PayoutConfig::where('merchant_id', $merchant->id)->where('live_paymentUrl', $request->referer)->first();
 
-                            $vCode = md5($transaction->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+                            Log::debug('payout', [
+                                'payoutSetting' => $payoutSetting,
+                                'merchant_id' => $merchant->id,
+                                'referer' => $request->referer,
+                                'payoutSetting' => $payoutSetting,
+                            ]);
+
+                            $vCode = md5($transaction->transaction_number . $paymentMethod->appId . $merchant->id);
                             Log::debug('md5', [
                                 'vcode' => $vCode,
                                 'txn_no' => $transaction->transaction_number,
-                                'appId' => $matchingPayoutSetting->appId,
-                                'merchant_id' => $matchingPayoutSetting->merchant_id,
+                                'appId' => $paymentMethod->appId,
+                                'merchant_id' => $merchant->id,
+                                'request_merchant' => $request->merchantId
                             ]);
 
                             $params = [
@@ -322,8 +329,8 @@ class TransactionController extends Controller
                                 // 'token' => $token,
                             ];
 
-                            $url = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->returnUrl;
-                            $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
+                            $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
+                            $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
 
                             $response = Http::post($callBackUrl, $params);
 
@@ -406,10 +413,9 @@ class TransactionController extends Controller
                         $merchantWallet->save();
 
                         // callback here
-                        $payoutSetting = PayoutConfig::where('merchant_id', $request->merchantId)->first();
-                        $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $request->referer);
+                        $payoutSetting = PayoutConfig::where('merchant_id', $request->merchantId)->where('live_paymentUrl', $request->referer)->first();
 
-                        $vCode = md5($transaction->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+                        $vCode = md5($transaction->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
 
                         $params = [
                             'merchant_id' => $transaction->merchant_id,
@@ -430,8 +436,8 @@ class TransactionController extends Controller
                             // 'token' => $token,
                         ];
 
-                        $url = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->returnUrl;
-                        $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
+                        $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
+                        $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
 
                         $response = Http::post($callBackUrl, $params);
                     }
