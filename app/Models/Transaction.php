@@ -36,5 +36,6 @@ class Transaction extends Model
         'txreceipt_status',
         'block_number',
         'payment_type',
+        'transfer_status',
     ];
 }

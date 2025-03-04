@@ -9,8 +9,9 @@ import { QRCode } from 'react-qrcode-logo';
 import { useTranslation } from 'react-i18next';
 import { CopyIcon } from "@/Components/Brand";
 import Tooltip from "@/Components/Tooltip";
+import { formatAmount } from "@/Composables";
 
-export default function Payment({ merchant, transaction, expirationTime, tokenAddress, storedToken, lang, referer }) {
+export default function Payment({ merchant, transaction, expirationTime, tokenAddress, storedToken, lang, referer, amount }) {
     
     const getRandomIndex = () => Math.floor(Math.random() * merchant.merchant_wallet_address.length);
     
@@ -192,11 +193,14 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
                     </div>
                 </div>
             </div>
-            <div>
+            <div >
                 <QRCode 
                     value={tokenAddress} 
                     fgColor="#000000"
                 />
+            </div>
+            <div className="text-gray-900 font-bold text-xxl">
+                ${formatAmount(amount)}
             </div>
             <div className="text-base font-semibold text-center flex flex-col">
                 <div>{t('wallet_address')}:</div> 

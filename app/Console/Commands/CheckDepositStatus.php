@@ -95,16 +95,38 @@ class CheckDepositStatus extends Command
                                     $symbol = $transaction['token_info']['symbol'];
 
                                     if ($symbol === "USDT") {
-                                        $pending->update([
-                                            'from_wallet' => $transaction['from'],
-                                            'txID' => $transaction['transaction_id'],
-                                            'block_time' => $transaction['block_timestamp'],
-                                            'txn_amount' => $txnAmount,
-                                            'fee' => $fee,
-                                            'total_amount' => $txnAmount - $fee,
-                                            'transaction_date' => $transaction_date,
-                                            'status' => 'success',
-                                        ]);
+
+                                        $inputAmount = $pending->amount; // Amount the user is expected to receive
+                                        $start_range = $txnAmount - 15;
+                                        $end_range = $txnAmount + 15;
+
+                                        if ($inputAmount >= $start_range && $inputAmount <= $end_range) {
+
+                                            $pending->update([
+                                                'from_wallet' => $transaction['from'],
+                                                'txID' => $transaction['transaction_id'],
+                                                'block_time' => $transaction['block_timestamp'],
+                                                'txn_amount' => $txnAmount,
+                                                'fee' => $fee,
+                                                'total_amount' => $txnAmount - $fee,
+                                                'transaction_date' => $transaction_date,
+                                                'status' => 'success',
+                                                'transfer_amount_type' => 'valid',
+                                            ]);
+
+                                        } else {
+                                            $pending->update([
+                                                'from_wallet' => $transaction['from'],
+                                                'txID' => $transaction['transaction_id'],
+                                                'block_time' => $transaction['block_timestamp'],
+                                                'txn_amount' => $txnAmount,
+                                                'fee' => $fee,
+                                                'total_amount' => $txnAmount - $fee,
+                                                'transaction_date' => $transaction_date,
+                                                'status' => 'success',
+                                                'transfer_amount_type' => 'invalid',
+                                            ]);
+                                        }
 
                                         if ($pending->transaction_type === 'deposit') {
                                             $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
