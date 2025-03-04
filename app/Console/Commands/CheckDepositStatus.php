@@ -93,12 +93,16 @@ class CheckDepositStatus extends Command
                                     $merchantRateProfile = RateProfile::find($merchant->rate_id);
                                     $fee = (($txnAmount * $merchantRateProfile->deposit_fee) / 100);
                                     $symbol = $transaction['token_info']['symbol'];
+                                    
+                                    $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
 
                                     if ($symbol === "USDT") {
 
+                                        
+
                                         $inputAmount = $pending->amount; // Amount the user is expected to receive
-                                        $start_range = $txnAmount - 15;
-                                        $end_range = $txnAmount + 15;
+                                        $start_range = $txnAmount - $payoutSetting->diff_amount;
+                                        $end_range = $txnAmount + $payoutSetting->diff_amount;
 
                                         if ($inputAmount >= $start_range && $inputAmount <= $end_range) {
 
@@ -155,7 +159,7 @@ class CheckDepositStatus extends Command
                                         ]);
                                     }
             
-                                    $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
+                                    
             
                                     $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
                                     $token = Str::random(32);
@@ -243,9 +247,11 @@ class CheckDepositStatus extends Command
                                 $merchantRateProfile = RateProfile::find($merchant->rate_id);
                                 $fee = (($txnAmount * $merchantRateProfile->deposit_fee) / 100);
 
+                                $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
+                                
                                 $inputAmount = $pending->amount; // Amount the user is expected to receive
-                                $start_range = $txnAmount - 15;
-                                $end_range = $txnAmount + 15;
+                                $start_range = $txnAmount - $payoutSetting->diff_amount;
+                                $end_range = $txnAmount + $payoutSetting->diff_amount;
 
                                 if ($inputAmount >= $start_range && $inputAmount <= $end_range) {
                                     $pending->update([
@@ -292,8 +298,6 @@ class CheckDepositStatus extends Command
                                     $merchantWallet->save();
     
                                 }
-
-                                $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
         
                                 $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
                                 $token = Str::random(32);
