@@ -73,7 +73,7 @@ class TransactionController extends Controller
             // check transaction number for both crm and gateway exist or not
             $findTxnNo = Transaction::where('merchant_id', $merchantId)->where('amount', $amount)->where('transaction_number', $transactionNo)->where('status', 'pending')->first();
             $checkOrderNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->first();
-            $paymentMethod = PayoutConfig::where('merchant_id', $merchantId)->where('live_paymentUrl', 'http://127.0.0.1:8010/')->first();
+            $paymentMethod = PayoutConfig::where('merchant_id', $merchantId)->where('live_paymentUrl', $request->referer)->first();
 
             // if transaction exist return to it
             if ($findTxnNo) {
