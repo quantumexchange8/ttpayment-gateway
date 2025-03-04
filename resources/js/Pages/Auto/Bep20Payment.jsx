@@ -5,8 +5,9 @@ import { QRCode } from 'react-qrcode-logo';
 import { CopyIcon } from "@/Components/Brand";
 import Tooltip from "@/Components/Tooltip";
 import Button from "@/Components/Button";
+import { formatAmount } from "@/Composables";
 
-export default function Bep20Payment({ merchant, transaction, expirationTime, tokenAddress, storedToken, lang, referer, apikey }) {
+export default function Bep20Payment({ merchant, transaction, expirationTime, tokenAddress, storedToken, lang, referer, apikey, amount }) {
 
     const getRandomIndex = () => Math.floor(Math.random() * merchant.merchant_wallet_address.length);
 
@@ -189,6 +190,9 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
                     value={tokenAddress} 
                     fgColor="#000000"
                 />
+            </div>
+            <div className="text-gray-900 font-bold text-xxl">
+                ${formatAmount(amount)}
             </div>
             <div className="text-base font-semibold text-center flex flex-col">
                 <div>{t('wallet_address')}:</div> 

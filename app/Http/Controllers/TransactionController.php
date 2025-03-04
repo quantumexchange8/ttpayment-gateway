@@ -39,7 +39,7 @@ class TransactionController extends Controller
         Log::debug('Incoming Data', $datas);
 
         $referer = request()->headers->get('referer');
-        Log::debug('Incoming referer', ['referer' => $referer]);
+        // Log::debug('Incoming referer', ['referer' => $referer]);
 
         $amount = $request->query('amount');
         $transactionNo = $request->query('orderNumber'); // TXN00000001 or no need
@@ -52,7 +52,9 @@ class TransactionController extends Controller
         $verifyToken = $request->query('token');
         $appId = PayoutConfig::where('merchant_id', $merchantId)->first();
         $lang = $request->query('locale'); // Language ? yes : default en
-        $this->apiKey = env('BSCSCAN_API_KEY');
+        $this->apiKey = 'EPSDNBABH6WB61JG79399KZY9RPSD3FYZ4';
+
+        // Log::debug('api key ', ['api key' => $this->apiKey]);
 
         if (empty($request->all())) {
             $request->session()->flush();
@@ -103,6 +105,7 @@ class TransactionController extends Controller
                         'lang' => $lang,
                         'referer' => $referer,
                         'apikey' => $this->apiKey,
+                        'amount' => $amount,
                     ]);
                 }
 
@@ -116,6 +119,7 @@ class TransactionController extends Controller
                         'lang' => $lang,
                         'referer' => $referer,
                         'apikey' => $this->apiKey,
+                        'amount' => $amount,
                     ]);
                 }
                 
@@ -267,17 +271,40 @@ class TransactionController extends Controller
                 if (empty($check)) {
 
                     if ($symbol === "USDT") {
-                        $transaction->update([
-                            'txID' => $transactionData['transaction_id'],
-                            'block_time' => $transactionData['block_timestamp'],
-                            'from_wallet' => $transactionData['from'],
-                            'to_wallet' => $transactionData['to'],
-                            'txn_amount' => $amount,
-                            'fee' => $fee,
-                            'total_amount' => $amount - $fee,
-                            'status' => 'success',
-                            'transaction_date' => $nowDateTime
-                        ]);
+
+                        $transfer_amount = $transactionData['value'] / 1000000 ; // 100
+                        $start_range = $transfer_amount - 15; //85
+                        $end_range = $transfer_amount + 15; // 115
+
+                        if ($inputAmount >= $start_range && $inputAmount <= $end_range) {
+                            $transaction->update([
+                                'txID' => $transactionData['transaction_id'],
+                                'block_time' => $transactionData['block_timestamp'],
+                                'from_wallet' => $transactionData['from'],
+                                'to_wallet' => $transactionData['to'],
+                                'txn_amount' => $amount,
+                                'fee' => $fee,
+                                'total_amount' => $amount - $fee,
+                                'status' => 'success',
+                                'transfer_status' => 'valid',
+                                'transaction_date' => $nowDateTime
+                            ]);
+                        } else {
+                            $transaction->update([
+                                'txID' => $transactionData['transaction_id'],
+                                'block_time' => $transactionData['block_timestamp'],
+                                'from_wallet' => $transactionData['from'],
+                                'to_wallet' => $transactionData['to'],
+                                'txn_amount' => $amount,
+                                'fee' => $fee,
+                                'total_amount' => $amount - $fee,
+                                'status' => 'success',
+                                'transfer_status' => 'invalid',
+                                'transaction_date' => $nowDateTime
+                            ]);
+                        }
+
+                        
                         if ($transaction->transaction_type === 'deposit') {
                             $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
             
@@ -290,10 +317,23 @@ class TransactionController extends Controller
                             $merchantWallet->save();
 
                             // callback here
-                            $payoutSetting = PayoutConfig::where('merchant_id', $request->merchantId)->first();
-                            $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $request->referer);
+                            $payoutSetting = PayoutConfig::where('merchant_id', $merchant->id)->where('live_paymentUrl', $request->referer)->first();
 
-                            $vCode = md5($transaction->amount . $transaction->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+                            // Log::debug('payout', [
+                            //     'payoutSetting' => $payoutSetting,
+                            //     'merchant_id' => $merchant->id,
+                            //     'referer' => $request->referer,
+                            //     'payoutSetting' => $payoutSetting,
+                            // ]);
+
+                            $vCode = md5($transaction->transaction_number . $paymentMethod->appId . $merchant->id);
+                            // Log::debug('md5', [
+                            //     'vcode' => $vCode,
+                            //     'txn_no' => $transaction->transaction_number,
+                            //     'appId' => $paymentMethod->appId,
+                            //     'merchant_id' => $merchant->id,
+                            //     'request_merchant' => $request->merchantId
+                            // ]);
 
                             $params = [
                                 'merchant_id' => $transaction->merchant_id,
@@ -307,6 +347,7 @@ class TransactionController extends Controller
                                 'input_amount' => $inputAmount,
                                 'transaction_number' => $transaction->transaction_number,
                                 'status' => $transaction->status,
+                                'transfer_amount_type' => $transaction->transfer_status,
                                 'payment_method' => $transaction->payment_method,
                                 'created_at' => $transaction->created_at,
                                 'description' => $transaction->description,
@@ -314,8 +355,8 @@ class TransactionController extends Controller
                                 // 'token' => $token,
                             ];
 
-                            $url = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->returnUrl;
-                            $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
+                            $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
+                            $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
 
                             $response = Http::post($callBackUrl, $params);
 
@@ -372,19 +413,44 @@ class TransactionController extends Controller
                 $fee = (($amount * $merchantRateProfile->deposit_fee) / 100);
 
                 if (empty($check)) {
-                    $transaction->update([
-                        'txID' => $transactionData['hash'],
-                        'block_time' => $transactionData['timeStamp'],
-                        'block_number' => $transactionData['blockNumber'],
-                        'from_wallet' => $transactionData['from'],
-                        'to_wallet' => $transactionData['to'],
-                        'txn_amount' => $transactionData['value'] / 1000000000000000000,
-                        'fee' => $fee,
-                        'total_amount' => $amount - $fee,
-                        'status' => 'success',
-                        'txreceipt_status' => $transactionData['txreceipt_status'],
-                        'transaction_date' => $nowDateTime
-                    ]);
+
+                    $transfer_amount = $transactionData['value'] / 1000000 ; // 100
+                    $start_range = $transfer_amount - 15; //85
+                    $end_range = $transfer_amount + 15; // 115
+
+                    if ($inputAmount >= $start_range && $inputAmount <= $end_range) {
+                        $transaction->update([
+                            'txID' => $transactionData['hash'],
+                            'block_time' => $transactionData['timeStamp'],
+                            'block_number' => $transactionData['blockNumber'],
+                            'from_wallet' => $transactionData['from'],
+                            'to_wallet' => $transactionData['to'],
+                            'txn_amount' => $transactionData['value'] / 1000000000000000000,
+                            'fee' => $fee,
+                            'total_amount' => $amount - $fee,
+                            'status' => 'success',
+                            'transfer_status' => 'valid',
+                            'txreceipt_status' => $transactionData['txreceipt_status'],
+                            'transaction_date' => $nowDateTime
+                        ]);
+                    } else {
+                        $transaction->update([
+                            'txID' => $transactionData['hash'],
+                            'block_time' => $transactionData['timeStamp'],
+                            'block_number' => $transactionData['blockNumber'],
+                            'from_wallet' => $transactionData['from'],
+                            'to_wallet' => $transactionData['to'],
+                            'txn_amount' => $transactionData['value'] / 1000000000000000000,
+                            'fee' => $fee,
+                            'total_amount' => $amount - $fee,
+                            'status' => 'success',
+                            'transfer_status' => 'valid',
+                            'txreceipt_status' => $transactionData['txreceipt_status'],
+                            'transaction_date' => $nowDateTime
+                        ]);
+                    }
+
+                    
 
                     if ($transaction->transaction_type === 'deposit') {
                         $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
@@ -398,10 +464,9 @@ class TransactionController extends Controller
                         $merchantWallet->save();
 
                         // callback here
-                        $payoutSetting = PayoutConfig::where('merchant_id', $request->merchantId)->first();
-                        $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $request->referer);
+                        $payoutSetting = PayoutConfig::where('merchant_id', $request->merchantId)->where('live_paymentUrl', $request->referer)->first();
 
-                        $vCode = md5($transaction->amount . $transaction->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+                        $vCode = md5($transaction->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
 
                         $params = [
                             'merchant_id' => $transaction->merchant_id,
@@ -415,6 +480,7 @@ class TransactionController extends Controller
                             'input_amount' => $inputAmount,
                             'transaction_number' => $transaction->transaction_number,
                             'status' => $transaction->status,
+                            'transfer_amount_type' => $transaction->transfer_status,
                             'payment_method' => $transaction->payment_method,
                             'created_at' => $transaction->created_at,
                             'description' => $transaction->description,
@@ -422,8 +488,8 @@ class TransactionController extends Controller
                             // 'token' => $token,
                         ];
 
-                        $url = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->returnUrl;
-                        $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
+                        $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
+                        $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
 
                         $response = Http::post($callBackUrl, $params);
                     }
@@ -520,7 +586,7 @@ class TransactionController extends Controller
         $payoutSetting = PayoutConfig::where('merchant_id', $merchant)->first();
         $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $transactionVal->origin_domain);
         
-        $vCode = md5($transactionVal->amount . $transactionVal->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
+        $vCode = md5($transactionVal->transaction_number . $matchingPayoutSetting->appId . $matchingPayoutSetting->merchant_id);
         
 
         $params = [

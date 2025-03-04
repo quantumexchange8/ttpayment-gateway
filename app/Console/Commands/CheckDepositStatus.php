@@ -44,7 +44,7 @@ class CheckDepositStatus extends Command
                     ->latest()
                     ->get();
 
-        $this->apiKey = env('BSCSCAN_API_KEY');
+        $this->apiKey = 'EPSDNBABH6WB61JG79399KZY9RPSD3FYZ4';
         $this->production = env('APP_ENV');
         
         foreach ($pendingPayments as $pending) {
@@ -95,16 +95,38 @@ class CheckDepositStatus extends Command
                                     $symbol = $transaction['token_info']['symbol'];
 
                                     if ($symbol === "USDT") {
-                                        $pending->update([
-                                            'from_wallet' => $transaction['from'],
-                                            'txID' => $transaction['transaction_id'],
-                                            'block_time' => $transaction['block_timestamp'],
-                                            'txn_amount' => $txnAmount,
-                                            'fee' => $fee,
-                                            'total_amount' => $txnAmount - $fee,
-                                            'transaction_date' => $transaction_date,
-                                            'status' => 'success',
-                                        ]);
+
+                                        $inputAmount = $pending->amount; // Amount the user is expected to receive
+                                        $start_range = $txnAmount - 15;
+                                        $end_range = $txnAmount + 15;
+
+                                        if ($inputAmount >= $start_range && $inputAmount <= $end_range) {
+
+                                            $pending->update([
+                                                'from_wallet' => $transaction['from'],
+                                                'txID' => $transaction['transaction_id'],
+                                                'block_time' => $transaction['block_timestamp'],
+                                                'txn_amount' => $txnAmount,
+                                                'fee' => $fee,
+                                                'total_amount' => $txnAmount - $fee,
+                                                'transaction_date' => $transaction_date,
+                                                'status' => 'success',
+                                                'transfer_status' => 'valid',
+                                            ]);
+
+                                        } else {
+                                            $pending->update([
+                                                'from_wallet' => $transaction['from'],
+                                                'txID' => $transaction['transaction_id'],
+                                                'block_time' => $transaction['block_timestamp'],
+                                                'txn_amount' => $txnAmount,
+                                                'fee' => $fee,
+                                                'total_amount' => $txnAmount - $fee,
+                                                'transaction_date' => $transaction_date,
+                                                'status' => 'success',
+                                                'transfer_status' => 'invalid',
+                                            ]);
+                                        }
 
                                         if ($pending->transaction_type === 'deposit') {
                                             $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
@@ -135,7 +157,7 @@ class CheckDepositStatus extends Command
             
                                     $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
             
-                                    $vCode = md5($pending->amount . $pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
+                                    $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
                                     $token = Str::random(32);
             
                                     $params = [
@@ -150,6 +172,7 @@ class CheckDepositStatus extends Command
                                         'transaction_number' => $pending->transaction_number,
                                         'amount' => $pending->amount,
                                         'status' => $pending->status,
+                                        'transfer_amount_type' => $pending->transfer_status,
                                         'payment_method' => $pending->payment_method,
                                         'created_at' => $pending->created_at,
                                         'description' => $pending->description,
@@ -220,18 +243,41 @@ class CheckDepositStatus extends Command
                                 $merchantRateProfile = RateProfile::find($merchant->rate_id);
                                 $fee = (($txnAmount * $merchantRateProfile->deposit_fee) / 100);
 
-                                $pending->update([
-                                    'from_wallet' => $transaction['from'],
-                                    'txID' => $transaction['hash'],
-                                    'block_time' => $transaction['timeStamp'],
-                                    'block_number' => $transaction['blockNumber'],
-                                    'txn_amount' => $txnAmount,
-                                    'fee' => $fee,
-                                    'total_amount' => $txnAmount - $fee,
-                                    'transaction_date' => $transaction_date,
-                                    'status' => 'success',
-                                    'txreceipt_status' => $transaction['txreceipt_status'],
-                                ]);
+                                $inputAmount = $pending->amount; // Amount the user is expected to receive
+                                $start_range = $txnAmount - 15;
+                                $end_range = $txnAmount + 15;
+
+                                if ($inputAmount >= $start_range && $inputAmount <= $end_range) {
+                                    $pending->update([
+                                        'from_wallet' => $transaction['from'],
+                                        'txID' => $transaction['hash'],
+                                        'block_time' => $transaction['timeStamp'],
+                                        'block_number' => $transaction['blockNumber'],
+                                        'txn_amount' => $txnAmount,
+                                        'fee' => $fee,
+                                        'total_amount' => $txnAmount - $fee,
+                                        'transaction_date' => $transaction_date,
+                                        'status' => 'success',
+                                        'txreceipt_status' => $transaction['txreceipt_status'],
+                                        'transfer_status' => 'valid',
+                                    ]);
+                                } else {
+                                    $pending->update([
+                                        'from_wallet' => $transaction['from'],
+                                        'txID' => $transaction['hash'],
+                                        'block_time' => $transaction['timeStamp'],
+                                        'block_number' => $transaction['blockNumber'],
+                                        'txn_amount' => $txnAmount,
+                                        'fee' => $fee,
+                                        'total_amount' => $txnAmount - $fee,
+                                        'transaction_date' => $transaction_date,
+                                        'status' => 'success',
+                                        'txreceipt_status' => $transaction['txreceipt_status'],
+                                        'transfer_status' => 'invalid',
+                                    ]);
+                                }
+
+                                
 
                                 if ($pending->transaction_type === 'deposit') {
                                     $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
@@ -249,7 +295,7 @@ class CheckDepositStatus extends Command
 
                                 $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
         
-                                $vCode = md5($pending->amount . $pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
+                                $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
                                 $token = Str::random(32);
         
                                 $params = [
@@ -262,11 +308,13 @@ class CheckDepositStatus extends Command
                                     'block_time' => $pending->block_time,
                                     'block_number' => $pending->block_number,
                                     'transfer_amount' => $pending->txn_amount,
+                                    'transfer_amount_type' => $pending->transfer_status,
                                     'transaction_number' => $pending->transaction_number,
                                     'amount' => $pending->amount,
                                     'status' => $pending->status,
                                     'txreceipt_status' => $pending->txreceipt_status,
                                     'payment_method' => $pending->payment_method,
+                                    'payment_type' => $pending->payment_type,
                                     'created_at' => $pending->created_at,
                                     'description' => $pending->description,
                                     'vCode' => $vCode,
