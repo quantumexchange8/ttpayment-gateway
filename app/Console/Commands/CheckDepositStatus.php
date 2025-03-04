@@ -111,7 +111,7 @@ class CheckDepositStatus extends Command
                                                 'total_amount' => $txnAmount - $fee,
                                                 'transaction_date' => $transaction_date,
                                                 'status' => 'success',
-                                                'transfer_amount_type' => 'valid',
+                                                'transfer_status' => 'valid',
                                             ]);
 
                                         } else {
@@ -124,7 +124,7 @@ class CheckDepositStatus extends Command
                                                 'total_amount' => $txnAmount - $fee,
                                                 'transaction_date' => $transaction_date,
                                                 'status' => 'success',
-                                                'transfer_amount_type' => 'invalid',
+                                                'transfer_status' => 'invalid',
                                             ]);
                                         }
 
@@ -172,6 +172,7 @@ class CheckDepositStatus extends Command
                                         'transaction_number' => $pending->transaction_number,
                                         'amount' => $pending->amount,
                                         'status' => $pending->status,
+                                        'transfer_amount_type' => $pending->transfer_status,
                                         'payment_method' => $pending->payment_method,
                                         'created_at' => $pending->created_at,
                                         'description' => $pending->description,
@@ -301,7 +302,7 @@ class CheckDepositStatus extends Command
                                         'transaction_date' => $transaction_date,
                                         'status' => 'success',
                                         'txreceipt_status' => $transaction['txreceipt_status'],
-                                        'transfer_amount_type' => 'valid',
+                                        'transfer_status' => 'valid',
                                     ]);
                                 } else {
                                     $pending->update([
@@ -315,7 +316,7 @@ class CheckDepositStatus extends Command
                                         'transaction_date' => $transaction_date,
                                         'status' => 'success',
                                         'txreceipt_status' => $transaction['txreceipt_status'],
-                                        'transfer_amount_type' => 'invalid',
+                                        'transfer_status' => 'invalid',
                                     ]);
                                 }
 
@@ -350,6 +351,7 @@ class CheckDepositStatus extends Command
                                     'block_time' => $pending->block_time,
                                     'block_number' => $pending->block_number,
                                     'transfer_amount' => $pending->txn_amount,
+                                    'transfer_amount_type' => $pending->transfer_status,
                                     'transaction_number' => $pending->transaction_number,
                                     'amount' => $pending->amount,
                                     'status' => $pending->status,
