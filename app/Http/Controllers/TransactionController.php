@@ -105,6 +105,7 @@ class TransactionController extends Controller
                         'lang' => $lang,
                         'referer' => $referer,
                         'apikey' => $this->apiKey,
+                        'amount' => $amount,
                     ]);
                 }
 
@@ -118,6 +119,7 @@ class TransactionController extends Controller
                         'lang' => $lang,
                         'referer' => $referer,
                         'apikey' => $this->apiKey,
+                        'amount' => $amount,
                     ]);
                 }
                 
