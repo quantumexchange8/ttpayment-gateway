@@ -285,18 +285,41 @@ class CheckDepositStatus extends Command
                                 $merchantRateProfile = RateProfile::find($merchant->rate_id);
                                 $fee = (($txnAmount * $merchantRateProfile->deposit_fee) / 100);
 
-                                $pending->update([
-                                    'from_wallet' => $transaction['from'],
-                                    'txID' => $transaction['hash'],
-                                    'block_time' => $transaction['timeStamp'],
-                                    'block_number' => $transaction['blockNumber'],
-                                    'txn_amount' => $txnAmount,
-                                    'fee' => $fee,
-                                    'total_amount' => $txnAmount - $fee,
-                                    'transaction_date' => $transaction_date,
-                                    'status' => 'success',
-                                    'txreceipt_status' => $transaction['txreceipt_status'],
-                                ]);
+                                $inputAmount = $pending->amount; // Amount the user is expected to receive
+                                $start_range = $txnAmount - 15;
+                                $end_range = $txnAmount + 15;
+
+                                if ($inputAmount >= $start_range && $inputAmount <= $end_range) {
+                                    $pending->update([
+                                        'from_wallet' => $transaction['from'],
+                                        'txID' => $transaction['hash'],
+                                        'block_time' => $transaction['timeStamp'],
+                                        'block_number' => $transaction['blockNumber'],
+                                        'txn_amount' => $txnAmount,
+                                        'fee' => $fee,
+                                        'total_amount' => $txnAmount - $fee,
+                                        'transaction_date' => $transaction_date,
+                                        'status' => 'success',
+                                        'txreceipt_status' => $transaction['txreceipt_status'],
+                                        'transfer_amount_type' => 'valid',
+                                    ]);
+                                } else {
+                                    $pending->update([
+                                        'from_wallet' => $transaction['from'],
+                                        'txID' => $transaction['hash'],
+                                        'block_time' => $transaction['timeStamp'],
+                                        'block_number' => $transaction['blockNumber'],
+                                        'txn_amount' => $txnAmount,
+                                        'fee' => $fee,
+                                        'total_amount' => $txnAmount - $fee,
+                                        'transaction_date' => $transaction_date,
+                                        'status' => 'success',
+                                        'txreceipt_status' => $transaction['txreceipt_status'],
+                                        'transfer_amount_type' => 'invalid',
+                                    ]);
+                                }
+
+                                
 
                                 if ($pending->transaction_type === 'deposit') {
                                     $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
