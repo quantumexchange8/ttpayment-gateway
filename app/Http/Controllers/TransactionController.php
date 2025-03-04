@@ -39,7 +39,7 @@ class TransactionController extends Controller
         Log::debug('Incoming Data', $datas);
 
         $referer = request()->headers->get('referer');
-        Log::debug('Incoming referer', ['referer' => $referer]);
+        // Log::debug('Incoming referer', ['referer' => $referer]);
 
         $amount = $request->query('amount');
         $transactionNo = $request->query('orderNumber'); // TXN00000001 or no need
@@ -54,7 +54,7 @@ class TransactionController extends Controller
         $lang = $request->query('locale'); // Language ? yes : default en
         $this->apiKey = 'EPSDNBABH6WB61JG79399KZY9RPSD3FYZ4';
 
-        Log::debug('api key ', ['api key' => $this->apiKey]);
+        // Log::debug('api key ', ['api key' => $this->apiKey]);
 
         if (empty($request->all())) {
             $request->session()->flush();
@@ -319,21 +319,21 @@ class TransactionController extends Controller
                             // callback here
                             $payoutSetting = PayoutConfig::where('merchant_id', $merchant->id)->where('live_paymentUrl', $request->referer)->first();
 
-                            Log::debug('payout', [
-                                'payoutSetting' => $payoutSetting,
-                                'merchant_id' => $merchant->id,
-                                'referer' => $request->referer,
-                                'payoutSetting' => $payoutSetting,
-                            ]);
+                            // Log::debug('payout', [
+                            //     'payoutSetting' => $payoutSetting,
+                            //     'merchant_id' => $merchant->id,
+                            //     'referer' => $request->referer,
+                            //     'payoutSetting' => $payoutSetting,
+                            // ]);
 
                             $vCode = md5($transaction->transaction_number . $paymentMethod->appId . $merchant->id);
-                            Log::debug('md5', [
-                                'vcode' => $vCode,
-                                'txn_no' => $transaction->transaction_number,
-                                'appId' => $paymentMethod->appId,
-                                'merchant_id' => $merchant->id,
-                                'request_merchant' => $request->merchantId
-                            ]);
+                            // Log::debug('md5', [
+                            //     'vcode' => $vCode,
+                            //     'txn_no' => $transaction->transaction_number,
+                            //     'appId' => $paymentMethod->appId,
+                            //     'merchant_id' => $merchant->id,
+                            //     'request_merchant' => $request->merchantId
+                            // ]);
 
                             $params = [
                                 'merchant_id' => $transaction->merchant_id,

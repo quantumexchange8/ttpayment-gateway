@@ -44,7 +44,7 @@ class CheckDepositStatus extends Command
                     ->latest()
                     ->get();
 
-        $this->apiKey = env('BSCSCAN_API_KEY');
+        $this->apiKey = 'EPSDNBABH6WB61JG79399KZY9RPSD3FYZ4';
         $this->production = env('APP_ENV');
         
         foreach ($pendingPayments as $pending) {
