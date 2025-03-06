@@ -33,6 +33,12 @@ class TransactionController extends Controller
         return view('payment');
     }
 
+    public function __construct()
+    {
+        // Get API Key from .env
+        $this->apiKey = env('BSCSCAN_API_KEY');
+    }
+
     public function payment(Request $request)
     {
         $datas = $request->all();
@@ -52,9 +58,8 @@ class TransactionController extends Controller
         $verifyToken = $request->query('token');
         $appId = PayoutConfig::where('merchant_id', $merchantId)->first();
         $lang = $request->query('locale'); // Language ? yes : default en
-        $this->apiKey = 'EPSDNBABH6WB61JG79399KZY9RPSD3FYZ4';
 
-        // Log::debug('api key ', ['api key' => $this->apiKey]);
+        Log::debug('api key ', ['api key' => $this->apiKey]);
 
         if (empty($request->all())) {
             $request->session()->flush();

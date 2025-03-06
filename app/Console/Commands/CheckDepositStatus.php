@@ -33,6 +33,11 @@ class CheckDepositStatus extends Command
      */
     protected $description = 'Check deposit statuses has txid';
 
+    public function __construct()
+    {
+        $this->apiKey = env('BSCSCAN_API_KEY');
+    }
+
     /**
      * Execute the console command.
      */
@@ -44,8 +49,9 @@ class CheckDepositStatus extends Command
                     ->latest()
                     ->get();
 
-        $this->apiKey = 'EPSDNBABH6WB61JG79399KZY9RPSD3FYZ4';
-        $this->production = env('APP_ENV');
+        // $this->apiKey = 'EPSDNBABH6WB61JG79399KZY9RPSD3FYZ4';
+        // $this->production = env('APP_ENV');
+        Log::debug('api key ', ['api key' => $this->apiKey]);
         
         foreach ($pendingPayments as $pending) {
             Log::debug('all pending data', ['transaction' => $pending->toArray()]);
