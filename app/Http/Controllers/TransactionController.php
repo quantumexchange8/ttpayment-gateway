@@ -36,7 +36,7 @@ class TransactionController extends Controller
     public function __construct()
     {
         // Get API Key from .env
-        $this->apiKey = env('BSCSCAN_API_KEY');
+        $this->apiKey = 'CKZKYT3UDFI3Z2URCK2XHB1ABT5SDMCW8D';
     }
 
     public function payment(Request $request)
