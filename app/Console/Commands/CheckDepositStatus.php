@@ -35,6 +35,7 @@ class CheckDepositStatus extends Command
 
     public function __construct()
     {
+        parent::__construct(); // 🔹 Ensure the parent constructor is called
         $this->apiKey = env('BSCSCAN_API_KEY');
     }
 
