@@ -294,10 +294,6 @@ class CheckDepositStatus extends Command
                         'transactions' => $transaction, 
                         'transaction_id' => $transaction['hash'] ?? 'N/A',
                     ]);
-                }
-
-                if ($response->successful()) {
-                    $transactionInfo = $response->json();
 
                     if (Transaction::where('txID', $transaction['hash'])->doesntExist()) {
                         Log::debug('Transaction ID does not exist');
@@ -398,6 +394,12 @@ class CheckDepositStatus extends Command
                     } else {
                         Log::debug('bep-20 txid', ['transaction_id' => $transaction['hash']]);
                     }
+                }
+
+                // if ($response->successful()) {
+                //     $transactionInfo = $response->json();
+
+                    
 
                     // if (!empty($transactionInfo['result'])) {
                     //     foreach($transactionInfo['result'] as $transaction) {
@@ -507,7 +509,7 @@ class CheckDepositStatus extends Command
                     //         }
                     //     }
                     // }
-                }
+                // }
             }
         }
     }

@@ -70,7 +70,7 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
             const fetchBlock = async () => {
                 try {
                     // const response = await fetch(`https://api.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=${apikey}`);
-                    const response = await fetch(`https://api-testnet.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=after&apikey=${apikey}`);
+                    const response = await fetch(`https://api-testnet.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=${apikey}`);
                     const result = await response.json();
 
                     setBlockTimestamp(result.result);
