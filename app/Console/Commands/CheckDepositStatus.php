@@ -44,7 +44,6 @@ class CheckDepositStatus extends Command
                     ->latest()
                     ->get();
 
-        $this->apiKey = 'EPSDNBABH6WB61JG79399KZY9RPSD3FYZ4';
         $this->production = env('APP_ENV');
         
         foreach ($pendingPayments as $pending) {
@@ -214,7 +213,7 @@ class CheckDepositStatus extends Command
                 //         'action' => 'getblocknobytime',
                 //         'timestamp' => $blockTimeStamp,
                 //         'closest' => 'after',
-                //         'apikey' => $this->apiKey,
+                //         'apikey' => $payoutSetting->api_key,
                 //     ]);
     
                 //     $response = Http::get('https://api.bscscan.com/api', [
@@ -225,7 +224,7 @@ class CheckDepositStatus extends Command
                 //         'sort' => 'desc',
                 //         'startblock' => $getStartBlock['result'],
                 //         'endblock' => 99999999,
-                //         'apikey' => $this->apiKey,
+                //         'apikey' => $payoutSetting->api_key,
                 //     ]);
                     
                 // } else {
@@ -234,7 +233,7 @@ class CheckDepositStatus extends Command
                 //         'action' => 'getblocknobytime',
                 //         'timestamp' => $blockTimeStamp,
                 //         'closest' => 'after',
-                //         'apikey' => $this->apiKey,
+                //         'apikey' => $payoutSetting->api_key,
                 //     ]);
     
                 //     $response = Http::get('https://api-testnet.bscscan.com/api', [
@@ -245,17 +244,19 @@ class CheckDepositStatus extends Command
                 //         'sort' => 'desc',
                 //         'startblock' => $getStartBlock['result'],
                 //         'endblock' => 99999999,
-                //         'apikey' => $this->apiKey,
+                //         'apikey' => $payoutSetting->api_key,
                 //     ]);
 
                 // }
+
+                $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
 
                 $getStartBlock = Http::get('https://api-testnet.bscscan.com/api', [
                     'module' => 'block',
                     'action' => 'getblocknobytime',
                     'timestamp' => $blockTimeStamp,
                     'closest' => 'after',
-                    'apikey' => $this->apiKey,
+                    'apikey' => $payoutSetting->api_key,
                 ]);
 
                 $txListResponse = Http::get('https://api-testnet.bscscan.com/api', [
@@ -266,7 +267,7 @@ class CheckDepositStatus extends Command
                     'sort' => 'desc',
                     'startblock' => $getStartBlock['result'],
                     'endblock' => 99999999,
-                    'apikey' => $this->apiKey,
+                    'apikey' => $payoutSetting->api_key,
                 ]);
 
                 $tokenTxResponse = Http::get('https://api-testnet.bscscan.com/api', [
@@ -277,7 +278,7 @@ class CheckDepositStatus extends Command
                     'sort' => 'desc',
                     'startblock' => $getStartBlock['result'],
                     'endblock' => 99999999,
-                    'apikey' => $this->apiKey,
+                    'apikey' => $payoutSetting->api_key,
                 ]);
 
 
@@ -308,7 +309,7 @@ class CheckDepositStatus extends Command
                         $merchantRateProfile = RateProfile::find($merchant->rate_id);
                         $fee = (($txnAmount * $merchantRateProfile->deposit_fee) / 100);
 
-                        $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
+                        
                         
                         $inputAmount = $pending->amount; // Amount the user is expected to receive
                         $start_range = $txnAmount - $payoutSetting->diff_amount;

@@ -52,9 +52,6 @@ class TransactionController extends Controller
         $verifyToken = $request->query('token');
         $appId = PayoutConfig::where('merchant_id', $merchantId)->first();
         $lang = $request->query('locale'); // Language ? yes : default en
-        $this->apiKey = 'EPSDNBABH6WB61JG79399KZY9RPSD3FYZ4';
-
-        // Log::debug('api key ', ['api key' => $this->apiKey]);
 
         if (empty($request->all())) {
             $request->session()->flush();
@@ -104,7 +101,7 @@ class TransactionController extends Controller
                         'storedToken' => $storedToken,
                         'lang' => $lang,
                         'referer' => $referer,
-                        'apikey' => $this->apiKey,
+                        'apikey' => $paymentMethod->api_key,
                         'amount' => $amount,
                     ]);
                 }
@@ -118,7 +115,7 @@ class TransactionController extends Controller
                         'storedToken' => $storedToken,
                         'lang' => $lang,
                         'referer' => $referer,
-                        'apikey' => $this->apiKey,
+                        'apikey' => $paymentMethod->api_key,
                         'amount' => $amount,
                     ]);
                 }
@@ -199,7 +196,7 @@ class TransactionController extends Controller
                             'storedToken' => $storedToken,
                             'lang' => $lang,
                             'referer' => $referer,
-                            'apikey' => $this->apiKey,
+                            'apikey' => $paymentMethod->api_key,
                         ]);
                     }
 
@@ -231,17 +228,12 @@ class TransactionController extends Controller
                             'storedToken' => $storedToken,
                             'lang' => $lang,
                             'referer' => $referer,
-                            'apikey' => $this->apiKey,
+                            'apikey' => $paymentMethod->api_key,
                         ]);
                     }
-                    
                 }
-    
-                // }
-            }
-            
+            }   
         }
-        
     }
 
     public function updateClientTransaction(Request $request)
