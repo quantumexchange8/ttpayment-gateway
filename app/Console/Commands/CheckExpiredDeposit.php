@@ -69,6 +69,7 @@ class CheckExpiredDeposit extends Command
                     'transaction_number' => $pending->transaction_number,
                     'amount' => $pending->amount,
                     'status' => $pending->status,
+                    'transfer_amount_type' => $pending->transfer_status,
                     'payment_method' => $pending->payment_method,
                     'created_at' => $pending->created_at,
                     'description' => $pending->description,
