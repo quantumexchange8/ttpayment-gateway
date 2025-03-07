@@ -69,8 +69,8 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
     useEffect(() => {
             const fetchBlock = async () => {
                 try {
-                    const response = await fetch(`https://api.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=after&apikey=${apikey}`);
-                    // const response = await fetch(`https://api-testnet.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=after&apikey=${apikey}`);
+                    const response = await fetch(`https://api.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=${apikey}`);
+                    // const response = await fetch(`https://api-testnet.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=${apikey}`);
                     const result = await response.json();
 
                     setBlockTimestamp(result.result);
@@ -85,8 +85,12 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
     
     useEffect(() => {
         // let pollingInterval;
+
+        let isTransactionTurn = true;
+
         const fetchTransactions = async () => {
             try {
+                console.log("Fetching Transactions...");
                 const url = `https://api.bscscan.com/api?module=account&action=txlist&address=${tokenAddress}&page=1&sort=asc&startblock=${blockTimestamp}&apikey=${apikey}`;
                 // const url = `https://api-testnet.bscscan.com/api?module=account&action=txlist&address=${tokenAddress}&page=1&sort=asc&startblock=${blockTimestamp}&apikey=${apikey}`;
 
@@ -103,7 +107,7 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
                     setData('txid', latestTransaction.hash);
                     setData('latestTransaction', latestTransaction);
 
-                    console.log('latestTransaction.result', data.latestTransaction)
+                    console.log('latestTransaction Transaction', data.latestTransaction)
 
                     if (data.latestTransaction.hash) {
                         post('/updateTransaction', {
@@ -120,9 +124,55 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
             }
         };
 
-        const pollingInterval = setInterval(fetchTransactions, 4000); // Poll every 5 seconds
+        const fetchTransfer = async () => {
+            try {
+                console.log("Fetching Transfer...");
+
+                const url = `https://api.bscscan.com/api?module=account&action=tokentx&address=${tokenAddress}&startblock=${blockTimestamp}&page=1&sort=asc&startblock=${blockTimestamp}&apikey=${apikey}`;
+                // const url = `https://api-testnet.bscscan.com/api?module=account&action=tokentx&address=${tokenAddress}&startblock=${blockTimestamp}&page=1&sort=asc&startblock=${blockTimestamp}&apikey=${apikey}`;
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                console.log('result: ', result);
+
+                if (result.result.length >= 1 && result.status === "1") {
+                    const latestTransaction = result.result[0];
+                    setTxid(latestTransaction.hash);
+                    setLatestTransaction(latestTransaction);
+
+                    setData('txid', latestTransaction.hash);
+                    setData('latestTransaction', latestTransaction);
+
+                    console.log('latestTransaction Transfer', data.latestTransaction)
+
+                    if (data.latestTransaction.hash) {
+                        post('/updateTransaction', {
+                            preserveScroll: true,
+                            onSuccess: () => {
+                                window.location.href = `/returnTransaction?transaction_id=${transaction.id}&token=${storedToken}&merchant_id=${merchant.id}&referer=${referer}`;
+                            }
+                        });
+                        clearInterval(pollingInterval);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error fetching Transfer:', error);
+            }
+        }
+
+        const pollingInterval = setInterval(() => {
+            if (isTransactionTurn) {
+                fetchTransactions();
+            } else {
+                fetchTransfer();
+            }
+            isTransactionTurn = !isTransactionTurn; // Toggle between transactions and transfers
+        }, 4000);
 
         return () => clearInterval(pollingInterval);
+
     }, [blockTimestamp, transDetails]);
 
     // console.log(currentWallet.wallet_address.token_address)

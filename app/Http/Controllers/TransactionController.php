@@ -26,17 +26,10 @@ use Ladumor\OneSignal\OneSignal;
 
 class TransactionController extends Controller
 {
-    protected $apiKey;
 
     public function index()
     {
         return view('payment');
-    }
-
-    public function __construct()
-    {
-        // Get API Key from .env
-        $this->apiKey = 'CKZKYT3UDFI3Z2URCK2XHB1ABT5SDMCW8D';
     }
 
     public function payment(Request $request)
@@ -58,8 +51,6 @@ class TransactionController extends Controller
         $verifyToken = $request->query('token');
         $appId = PayoutConfig::where('merchant_id', $merchantId)->first();
         $lang = $request->query('locale'); // Language ? yes : default en
-
-        Log::debug('api key ', ['api key' => $this->apiKey]);
 
         if (empty($request->all())) {
             $request->session()->flush();
@@ -109,7 +100,7 @@ class TransactionController extends Controller
                         'storedToken' => $storedToken,
                         'lang' => $lang,
                         'referer' => $referer,
-                        'apikey' => $this->apiKey,
+                        'apikey' => $paymentMethod->api_key,
                         'amount' => $amount,
                     ]);
                 }
@@ -123,7 +114,7 @@ class TransactionController extends Controller
                         'storedToken' => $storedToken,
                         'lang' => $lang,
                         'referer' => $referer,
-                        'apikey' => $this->apiKey,
+                        'apikey' => $paymentMethod->api_key,
                         'amount' => $amount,
                     ]);
                 }
@@ -204,7 +195,7 @@ class TransactionController extends Controller
                             'storedToken' => $storedToken,
                             'lang' => $lang,
                             'referer' => $referer,
-                            'apikey' => $this->apiKey,
+                            'apikey' => $paymentMethod->api_key,
                         ]);
                     }
 
@@ -236,17 +227,12 @@ class TransactionController extends Controller
                             'storedToken' => $storedToken,
                             'lang' => $lang,
                             'referer' => $referer,
-                            'apikey' => $this->apiKey,
+                            'apikey' => $paymentMethod->api_key,
                         ]);
                     }
-                    
                 }
-    
-                // }
-            }
-            
+            }   
         }
-        
     }
 
     public function updateClientTransaction(Request $request)
