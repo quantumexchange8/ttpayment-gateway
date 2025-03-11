@@ -72,7 +72,8 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
                     const response = await fetch(`https://api.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=${apikey}`);
                     // const response = await fetch(`https://api-testnet.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=${apikey}`);
                     const result = await response.json();
-
+                    console.log('block:', result.result)
+                    
                     setBlockTimestamp(result.result);
                 } catch (error) {
                     console.error('Error fetching block:', error);
@@ -128,8 +129,8 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
             try {
                 console.log("Fetching Transfer...");
 
-                const url = `https://api.bscscan.com/api?module=account&action=tokentx&address=${tokenAddress}&startblock=${blockTimestamp}&page=1&sort=asc&startblock=${blockTimestamp}&apikey=${apikey}`;
-                // const url = `https://api-testnet.bscscan.com/api?module=account&action=tokentx&address=${tokenAddress}&startblock=${blockTimestamp}&page=1&sort=asc&startblock=${blockTimestamp}&apikey=${apikey}`;
+                const url = `https://api.bscscan.com/api?module=account&action=tokentx&address=${tokenAddress}&page=1&sort=asc&startblock=${blockTimestamp}&apikey=${apikey}`;
+                // const url = `https://api-testnet.bscscan.com/api?module=account&action=tokentx&address=${tokenAddress}&page=1&sort=asc&startblock=${blockTimestamp}&apikey=${apikey}`;
 
                 const response = await fetch(url);
                 const result = await response.json();
