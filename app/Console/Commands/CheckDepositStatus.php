@@ -215,6 +215,8 @@ class CheckDepositStatus extends Command
                     'apikey' => $payoutSetting->api_key,
                 ]);
 
+                Log::debug('block', ['block' => $getStartBlock]);
+
                 $txListResponse = Http::get('https://api.bscscan.com/api', [
                     'module' => 'account',
                     'action' => 'txlist',
