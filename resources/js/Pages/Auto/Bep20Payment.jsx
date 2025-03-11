@@ -64,16 +64,26 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
         return () => clearInterval(interval);
     }, [merchant.refresh_time, merchant.merchant_wallet_address.length]);
 
-    const timestamp = Math.floor(Date.now() / 1000);
+    
 
     useEffect(() => {
             const fetchBlock = async () => {
                 try {
-                    // const response = await fetch(`https://api.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=${apikey}`);
-                    const response = await fetch(`https://api-testnet.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=${apikey}`);
-                    const result = await response.json();
+                    const timestamp = Math.floor(Date.now() / 1000) - 20;
+                    // const response = await fetch(`https://api.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=EPSDNBABH6WB61JG79399KZY9RPSD3FYZ4`);
+                    // const response = await fetch(`https://api.bscscan.com/api?module=proxy&action=eth_blockNumber&apikey=${apikey}`);
+                    const response = await fetch(`https://api-testnet.bscscan.com/api?module=proxy&action=eth_blockNumber&apikey=${apikey}`);
+                    const result = await response.json(); 
 
-                    setBlockTimestamp(result.result);
+                    if (result.result) {
+                        const latestBlock = parseInt(result.result, 16);
+                        const amendBlock = latestBlock - 20;
+
+                        console.log('block: ', amendBlock)
+
+                        setBlockTimestamp(amendBlock);
+                    }
+                    
                 } catch (error) {
                     console.error('Error fetching block:', error);
                 }
@@ -244,10 +254,10 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
             <div className="text-gray-900 font-bold text-xxl">
                 ${formatAmount(amount)}
             </div>
-            <div className="text-base font-semibold text-center flex flex-col">
+            <div className="text-base font-semibold text-center flex flex-col max-w-80 md:max-w-full">
                 <div>{t('wallet_address')}:</div> 
                 <div className=" font-bold flex items-center gap-1" >
-                    <div>
+                    <div className="break-all">
                         {tokenAddress}
                     </div>
                     <div onClick={() => handleCopy(tokenAddress)}>
