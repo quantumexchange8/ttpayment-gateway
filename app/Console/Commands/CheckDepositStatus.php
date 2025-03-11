@@ -278,7 +278,7 @@ class CheckDepositStatus extends Command
                                 'total_amount' => $txnAmount - $fee,
                                 'transaction_date' => $transaction_date,
                                 'status' => 'success',
-                                'txreceipt_status' => $transaction['txreceipt_status'],
+                                'txreceipt_status' => $transaction['txreceipt_status'] ?? null,
                                 'transfer_status' => 'valid',
                             ]);
                         } else {
@@ -292,7 +292,7 @@ class CheckDepositStatus extends Command
                                 'total_amount' => $txnAmount - $fee,
                                 'transaction_date' => $transaction_date,
                                 'status' => 'success',
-                                'txreceipt_status' => $transaction['txreceipt_status'],
+                                'txreceipt_status' => $transaction['txreceipt_status'] ?? null,
                                 'transfer_status' => 'invalid',
                             ]);
                         }

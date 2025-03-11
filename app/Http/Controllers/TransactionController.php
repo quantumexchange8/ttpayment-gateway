@@ -423,7 +423,7 @@ class TransactionController extends Controller
                             'total_amount' => $amount - $fee,
                             'status' => 'success',
                             'transfer_status' => 'valid',
-                            'txreceipt_status' => $transactionData['txreceipt_status'],
+                            'txreceipt_status' => $transactionData['txreceipt_status'] ?? null,
                             'transaction_date' => $nowDateTime
                         ]);
                     } else {
@@ -438,7 +438,7 @@ class TransactionController extends Controller
                             'total_amount' => $amount - $fee,
                             'status' => 'success',
                             'transfer_status' => 'valid',
-                            'txreceipt_status' => $transactionData['txreceipt_status'],
+                            'txreceipt_status' => $transactionData['txreceipt_status'] ?? null,
                             'transaction_date' => $nowDateTime
                         ]);
                     }
