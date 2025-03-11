@@ -65,8 +65,6 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
     }, [merchant.refresh_time, merchant.merchant_wallet_address.length]);
 
     const timestamp = Math.floor(Date.now() / 1000);
-    console.log('date: ', Date.now())
-
 
     useEffect(() => {
             const fetchBlock = async () => {
