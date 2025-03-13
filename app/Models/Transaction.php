@@ -37,5 +37,6 @@ class Transaction extends Model
         'block_number',
         'payment_type',
         'transfer_status',
+        'token_symbol'
     ];
 }
