@@ -54,7 +54,6 @@ class CheckDepositStatus extends Command
             // $expiredAt = Carbon::parse($pending->expired_at);
             $min_timeStamp = $createdAt->timestamp * 1000;
             $blockTimeStamp = $createdAt->timestamp;
-            dd($blockTimeStamp);
             $merchantID = $pending->merchant_id;
             $merchant = Merchant::find($merchantID);
             $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
