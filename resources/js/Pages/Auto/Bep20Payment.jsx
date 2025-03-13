@@ -69,20 +69,12 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
     useEffect(() => {
             const fetchBlock = async () => {
                 try {
-                    const timestamp = Math.floor(Date.now() / 1000) - 20;
-                    // const response = await fetch(`https://api.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=EPSDNBABH6WB61JG79399KZY9RPSD3FYZ4`);
-                    const response = await fetch(`https://api.bscscan.com/api?module=proxy&action=eth_blockNumber&apikey=${apikey}`);
-                    // const response = await fetch(`https://api-testnet.bscscan.com/api?module=proxy&action=eth_blockNumber&apikey=${apikey}`);
+                    const timestamp = Math.floor(Date.now() / 1000) - 10;
+                    const response = await fetch(`https://api.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=${apikey}`);
+                    // const response = await fetch(`https://api-testnet.bscscan.com/api?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=before&apikey=EPSDNBABH6WB61JG79399KZY9RPSD3FYZ4`);
                     const result = await response.json(); 
 
-                    if (result.result) {
-                        const latestBlock = parseInt(result.result, 16);
-                        const amendBlock = latestBlock - 20;
-
-                        console.log('block: ', amendBlock)
-
-                        setBlockTimestamp(amendBlock);
-                    }
+                    setBlockTimestamp(result.result)
                     
                 } catch (error) {
                     console.error('Error fetching block:', error);

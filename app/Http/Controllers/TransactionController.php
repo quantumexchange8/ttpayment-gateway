@@ -423,8 +423,9 @@ class TransactionController extends Controller
                             'total_amount' => $amount - $fee,
                             'status' => 'success',
                             'transfer_status' => 'valid',
-                            'txreceipt_status' => $transactionData['txreceipt_status'] ?? null,
-                            'transaction_date' => $nowDateTime
+                            'txreceipt_status' => $transactionData['txreceipt_status'],
+                            'transaction_date' => $nowDateTime,
+                            'token_symbol' => $transactionData['tokenSymbol'] ?? null,
                         ]);
                     } else {
                         $transaction->update([
@@ -438,8 +439,9 @@ class TransactionController extends Controller
                             'total_amount' => $amount - $fee,
                             'status' => 'success',
                             'transfer_status' => 'valid',
-                            'txreceipt_status' => $transactionData['txreceipt_status'] ?? null,
-                            'transaction_date' => $nowDateTime
+                            'txreceipt_status' => $transactionData['txreceipt_status'],
+                            'transaction_date' => $nowDateTime,
+                            'token_symbol' => $transactionData['tokenSymbol'] ?? null,
                         ]);
                     }
 

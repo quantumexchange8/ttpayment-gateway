@@ -215,7 +215,7 @@ class CheckDepositStatus extends Command
                     'apikey' => $payoutSetting->api_key,
                 ]);
 
-                Log::debug('block', ['block' => $getStartBlock]);
+                Log::debug('block', ['block' => $getStartBlock['result']]);
 
                 $txListResponse = Http::get('https://api.bscscan.com/api', [
                     'module' => 'account',
@@ -280,7 +280,8 @@ class CheckDepositStatus extends Command
                                 'total_amount' => $txnAmount - $fee,
                                 'transaction_date' => $transaction_date,
                                 'status' => 'success',
-                                'txreceipt_status' => $transaction['txreceipt_status'] ?? null,
+                                'txreceipt_status' => $transaction['txreceipt_status'],
+                                'token_symbol' => $transaction['tokenSymbol'] ?? null,
                                 'transfer_status' => 'valid',
                             ]);
                         } else {
@@ -294,7 +295,8 @@ class CheckDepositStatus extends Command
                                 'total_amount' => $txnAmount - $fee,
                                 'transaction_date' => $transaction_date,
                                 'status' => 'success',
-                                'txreceipt_status' => $transaction['txreceipt_status'] ?? null,
+                                'txreceipt_status' => $transaction['txreceipt_status'],
+                                'token_symbol' => $transaction['tokenSymbol'] ?? null,
                                 'transfer_status' => 'invalid',
                             ]);
                         }
