@@ -54,6 +54,7 @@ class CheckDepositStatus extends Command
             // $expiredAt = Carbon::parse($pending->expired_at);
             $min_timeStamp = $createdAt->timestamp * 1000;
             $blockTimeStamp = $createdAt->timestamp;
+            dd($blockTimeStamp);
             $merchantID = $pending->merchant_id;
             $merchant = Merchant::find($merchantID);
             $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
@@ -259,6 +260,8 @@ class CheckDepositStatus extends Command
                     'apikey' => $payoutSetting->api_key,
                 ]);
 
+                Log::debug('getStartBlock: ', ['result: ' => $getStartBlock['result']]);
+
                 $txListResponse = Http::get('https://api-testnet.bscscan.com/api', [
                     'module' => 'account',
                     'action' => 'txlist',
@@ -323,6 +326,7 @@ class CheckDepositStatus extends Command
                                 'transaction_date' => $transaction_date,
                                 'status' => 'success',
                                 'txreceipt_status' => $transaction['txreceipt_status'],
+                                'token_symbol' => $transaction['tokenSymbol'] ?? null,
                                 'transfer_status' => 'valid',
                             ]);
                         } else {
@@ -337,6 +341,7 @@ class CheckDepositStatus extends Command
                                 'transaction_date' => $transaction_date,
                                 'status' => 'success',
                                 'txreceipt_status' => $transaction['txreceipt_status'],
+                                'token_symbol' => $transaction['tokenSymbol'] ?? null,
                                 'transfer_status' => 'invalid',
                             ]);
                         }
