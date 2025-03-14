@@ -25,9 +25,16 @@ class CheckDepositStatus extends Command
             ->latest()
             ->get();
 
-        foreach ($pendingPayments as $pending) {
+        if ($pendingPayments->isEmpty()) {
+            Log::info('No pending payments found. Exiting command.');
+            return;
+        }
+
+        while ($pending = array_shift($pendingPayments)) {
             $this->processPendingPayment($pending);
         }
+
+        Log::info('CheckDepositStatus command completed. All pending payments processed.');
     }
 
     protected function processPendingPayment(Transaction $pending)
@@ -83,7 +90,24 @@ class CheckDepositStatus extends Command
         Log::debug('transaction', ['response receive' => $transactionInfo]);
 
         foreach ($transactionInfo['data'] as $transaction) {
-            $this->updateTransaction($pending, $transaction, $merchant, $merchantWallet, $payoutSetting, 'trc-20');
+
+            $apiAmount = $transaction['value'] / 1000000; // 转换为实际金额
+
+            // 检查金额是否在允许的范围内
+            $startRange = $pending->amount - $payoutSetting->diff_amount;
+            $endRange = $pending->amount + $payoutSetting->diff_amount;
+
+            if ($apiAmount >= $startRange && $apiAmount <= $endRange) {
+
+                // 如果金额匹配，则更新交易
+                $this->updateTransaction($pending, $transaction, $merchant, $merchantWallet, $payoutSetting, 'trc-20');
+                break;
+            } else {
+                Log::debug('Skipping transaction due to amount mismatch', [
+                    'pending_amount' => $pending->amount,
+                    'api_amount' => $apiAmount,
+                ]);
+            }
         }
     }
 
@@ -135,7 +159,24 @@ class CheckDepositStatus extends Command
 
         $transactions = array_merge($txListResponse->json()['result'], $tokenTxResponse->json()['result']);
         foreach ($transactions as $transaction) {
-            $this->updateTransaction($pending, $transaction, $merchant, $merchantWallet, $payoutSetting, 'bep-20');
+
+            $apiAmount = $transaction['value'] / 1000000000000000000; // 转换为实际金额
+
+            // 检查金额是否在允许的范围内
+            $startRange = $pending->amount - $payoutSetting->diff_amount;
+            $endRange = $pending->amount + $payoutSetting->diff_amount;
+
+            if ($apiAmount >= $startRange && $apiAmount <= $endRange) {
+                // 如果金额匹配，则更新交易
+                $this->updateTransaction($pending, $transaction, $merchant, $merchantWallet, $payoutSetting, 'bep-20');
+                break; // 找到匹配的交易后跳出循环
+            } else {
+                Log::debug('Skipping transaction due to amount mismatch', [
+                    'pending_amount' => $pending->amount,
+                    'api_amount' => $apiAmount,
+                ]);
+            }
+            
         }
     }
 
