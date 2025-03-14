@@ -30,7 +30,10 @@ class CheckDepositStatus extends Command
             return;
         }
 
-        while ($pending = array_shift($pendingPayments)) {
+        // 将 Collection 转换为数组
+        $pendingPaymentsArray = $pendingPayments->toArray();
+        
+        while ($pending = array_shift($pendingPaymentsArray)) {
             $this->processPendingPayment($pending);
         }
 
