@@ -13,349 +13,257 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-use function PHPUnit\Framework\isEmpty;
-
 class CheckDepositStatus extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'check:deposit-status';
-    protected $production;
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Check deposit statuses has txid';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
-
         $pendingPayments = Transaction::where('status', 'pending')
-                    ->where('transaction_type', 'deposit')
-                    ->latest()
-                    ->get();
+            ->where('transaction_type', 'deposit')
+            ->latest()
+            ->get();
 
-        $this->production = env('APP_ENV');
+        if ($pendingPayments->isEmpty()) {
+            Log::info('No pending payments found. Exiting command.');
+            return;
+        }
+
+        // 将 Collection 转换为数组
+        $pendingPaymentsArray = $pendingPayments->toArray();
         
-        foreach ($pendingPayments as $pending) {
-            Log::debug('all pending data', ['transaction' => $pending->toArray()]);
+        while ($pending = $pendingPayments->shift()) {
+            // $pending 是 Transaction 模型实例
+            $this->processPendingPayment($pending);
+        }
 
-            $tokenAddress = $pending->to_wallet;
-            $createdAt = $pending->created_at;
-            // $expiredAt = Carbon::parse($pending->expired_at);
-            $min_timeStamp = $createdAt->timestamp * 1000;
-            $blockTimeStamp = $createdAt->timestamp;
-            $merchantID = $pending->merchant_id;
-            $merchant = Merchant::find($merchantID);
-            $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
+        Log::info('CheckDepositStatus command completed. All pending payments processed.');
+    }
 
-            if ($pending->payment_type === 'trc-20') {
+    protected function processPendingPayment(Transaction $pending)
+    {
+        Log::debug('Processing pending payment', ['transaction' => $pending->toArray()]);
 
-                $response = Http::get('https://api.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
-                    'min_timestamp' => $min_timeStamp,
-                    'only_to' => true,
+        $merchant = Merchant::find($pending->merchant_id);
+        if (!$merchant) {
+            Log::error('Merchant not found', ['merchant_id' => $pending->merchant_id]);
+            return;
+        }
+
+        $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
+        if (!$merchantWallet) {
+            Log::error('Merchant wallet not found', ['merchant_id' => $merchant->id]);
+            return;
+        }
+
+        $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)
+            ->where('live_paymentUrl', $pending->origin_domain)
+            ->first();
+
+        if (!$payoutSetting) {
+            Log::error('Payout setting not found', ['merchant_id' => $pending->merchant_id]);
+            return;
+        }
+
+        if ($pending->payment_type === 'trc-20') {
+            $this->processTrc20Payment($pending, $merchant, $merchantWallet, $payoutSetting);
+        } elseif ($pending->payment_type === 'bep-20') {
+            $this->processBep20Payment($pending, $merchant, $merchantWallet, $payoutSetting);
+        }
+    }
+
+    protected function processTrc20Payment(Transaction $pending, Merchant $merchant, MerchantWallet $merchantWallet, PayoutConfig $payoutSetting)
+    {
+        $response = Http::get('https://api.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
+            'min_timestamp' => $pending->created_at->timestamp * 1000,
+            'only_to' => true,
+        ]);
+
+        if (!$response->successful()) {
+            Log::error('Failed to fetch TRC-20 transactions', ['response' => $response->json()]);
+            return;
+        }
+
+        $transactionInfo = $response->json();
+        if (empty($transactionInfo['data'])) {
+            Log::debug('No TRC-20 transactions found');
+            return;
+        }
+
+        Log::debug('transaction', ['response receive' => $transactionInfo]);
+
+        foreach ($transactionInfo['data'] as $transaction) {
+
+            $apiAmount = $transaction['value'] / 1000000; // 转换为实际金额
+
+            // 检查金额是否在允许的范围内
+            $startRange = $pending->amount - $payoutSetting->diff_amount;
+            $endRange = $pending->amount + $payoutSetting->diff_amount;
+
+            if ($apiAmount >= $startRange && $apiAmount <= $endRange) {
+
+                // 如果金额匹配，则更新交易
+                $this->updateTransaction($pending, $transaction, $merchant, $merchantWallet, $payoutSetting, 'trc-20');
+                break;
+            } else {
+                Log::debug('Skipping transaction due to amount mismatch', [
+                    'pending_amount' => $pending->amount,
+                    'api_amount' => $apiAmount,
                 ]);
-
-                // $response = Http::get('https://nile.trongrid.io/v1/accounts/'. $tokenAddress .'/transactions/trc20', [
-                //     'min_timestamp' => $min_timeStamp,
-                //     'only_to' => true,
-                // ]);
-
-                Log::debug('Response received', $response->json());
-            
-                if ($response->successful()) {
-                    $transactionInfo = $response->json();
-
-                    if (!empty($transactionInfo['data'])) {
-                        foreach($transactionInfo as $transactions) {
-                            Log::debug('transactions', $transactions);
-        
-                            foreach($transactions as $transaction) {
-                                Log::debug('data', $transaction);
-                                Log::debug('data test', ['transaction_id' => $transaction['transaction_id']]);
-        
-                                if (Transaction::where('txID', $transaction['transaction_id'])->doesntExist()) {
-                                    Log::debug('Transaction ID does not exist');
-            
-                                    $txnAmount = $transaction['value'] / 1000000;
-                                    $timestamp = $transaction['block_timestamp'] / 1000;
-                                    $transaction_date = Carbon::createFromTimestamp($timestamp)->setTimezone('GMT+8');
-                                    $merchantRateProfile = RateProfile::find($merchant->rate_id);
-                                    $fee = (($txnAmount * $merchantRateProfile->deposit_fee) / 100);
-                                    $symbol = $transaction['token_info']['symbol'];
-                                    
-                                    $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
-
-                                    if ($symbol === "USDT") {
-
-                                        
-
-                                        $inputAmount = $pending->amount; // Amount the user is expected to receive
-                                        $start_range = $txnAmount - $payoutSetting->diff_amount;
-                                        $end_range = $txnAmount + $payoutSetting->diff_amount;
-
-                                        if ($inputAmount >= $start_range && $inputAmount <= $end_range) {
-
-                                            $pending->update([
-                                                'from_wallet' => $transaction['from'],
-                                                'txID' => $transaction['transaction_id'],
-                                                'block_time' => $transaction['block_timestamp'],
-                                                'txn_amount' => $txnAmount,
-                                                'fee' => $fee,
-                                                'total_amount' => $txnAmount - $fee,
-                                                'transaction_date' => $transaction_date,
-                                                'status' => 'success',
-                                                'transfer_status' => 'valid',
-                                            ]);
-
-                                        } else {
-                                            $pending->update([
-                                                'from_wallet' => $transaction['from'],
-                                                'txID' => $transaction['transaction_id'],
-                                                'block_time' => $transaction['block_timestamp'],
-                                                'txn_amount' => $txnAmount,
-                                                'fee' => $fee,
-                                                'total_amount' => $txnAmount - $fee,
-                                                'transaction_date' => $transaction_date,
-                                                'status' => 'success',
-                                                'transfer_status' => 'invalid',
-                                            ]);
-                                        }
-
-                                        if ($pending->transaction_type === 'deposit') {
-                                            $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
-            
-                                            $merchantWallet->gross_deposit += $txnAmount; //gross amount 
-                                            $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
-                                            $merchantWallet->total_fee += $gross_fee; // total fee
-                                            $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
-                                            
-                                            $merchantWallet->total_deposit += $txnAmount;
-            
-                                            $merchantWallet->save();
-            
-                                        }
-                                    } else {
-                                        $pending->update([
-                                            'from_wallet' => $transaction['from'],
-                                            'txID' => $transaction['transaction_id'],
-                                            'block_time' => $transaction['block_timestamp'],
-                                            'txn_amount' => $txnAmount,
-                                            'fee' => $fee,
-                                            'total_amount' => $txnAmount - $fee,
-                                            'transaction_date' => $transaction_date,
-                                            'status' => 'fail',
-                                            'description' => 'unknown symbol',
-                                        ]);
-                                    }
-            
-                                    
-            
-                                    $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
-                                    $token = Str::random(32);
-            
-                                    $params = [
-                                        'merchant_id' => $pending->merchant_id,
-                                        'client_id' => $pending->client_id,
-                                        'transaction_type' => $pending->transaction_type,
-                                        'from_wallet' => $pending->from_wallet,
-                                        'to_wallet' => $pending->to_wallet,
-                                        'txID' => $pending->txID,
-                                        'block_time' => $pending->block_time,
-                                        'transfer_amount' => $pending->txn_amount,
-                                        'transaction_number' => $pending->transaction_number,
-                                        'amount' => $pending->amount,
-                                        'status' => $pending->status,
-                                        'transfer_amount_type' => $pending->transfer_status,
-                                        'payment_method' => $pending->payment_method,
-                                        'created_at' => $pending->created_at,
-                                        'description' => $pending->description,
-                                        'vCode' => $vCode,
-                                        'token' => $token,
-                                    ];
-            
-                                    $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
-                                    $response = Http::post($callBackUrl, $params);
-                                    
-                                    // Log::debug('deposit Callback', $response);
-                                    Log::debug('deposit Callback', [
-                                        'status' => $response->status(),
-                                    ]);
-                                    
-                                } else {
-                                    Log::debug('txid', ['transaction_id' => $transaction['transaction_id']]);
-                                }
-                            }
-                        }
-                    }
-                    
-                } else {
-                    return response()->json(['error' => 'Failed to fetch transactions']);
-                }
-
-            }
-
-            if ($pending->payment_type === 'bep-20') {
-
-                $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
-
-                $getStartBlock = Http::get('https://api.bscscan.com/api', [
-                    'module' => 'block',
-                    'action' => 'getblocknobytime',
-                    'timestamp' => $blockTimeStamp,
-                    'closest' => 'after',
-                    'apikey' => $payoutSetting->api_key,
-                ]);
-
-                Log::debug('block', ['block' => $getStartBlock['result']]);
-
-                $txListResponse = Http::get('https://api.bscscan.com/api', [
-                    'module' => 'account',
-                    'action' => 'txlist',
-                    'address' => $tokenAddress,
-                    'page' => 1,
-                    'sort' => 'desc',
-                    'startblock' => $getStartBlock['result'],
-                    'endblock' => 99999999,
-                    'apikey' => $payoutSetting->api_key,
-                ]);
-
-                $tokenTxResponse = Http::get('https://api.bscscan.com/api', [
-                    'module' => 'account',
-                    'action' => 'tokentx',
-                    'address' => $tokenAddress,
-                    'page' => 1,
-                    'sort' => 'desc',
-                    'startblock' => $getStartBlock['result'],
-                    'endblock' => 99999999,
-                    'apikey' => $payoutSetting->api_key,
-                ]);
-
-
-
-                Log::debug('txListResponse & tokenTxResponse', [
-                    'response' => array_merge($txListResponse->json()['result'], $tokenTxResponse->json()['result']),
-                ]);
-
-                $transactions = array_merge($txListResponse->json()['result'], $tokenTxResponse->json()['result']);
-
-                foreach ($transactions as $transaction) {
-                    Log::debug('bep-20 transactions', [
-                        'transactions' => $transaction, 
-                        'transaction_id' => $transaction['hash'] ?? 'N/A',
-                    ]);
-
-                    if (Transaction::where('txID', $transaction['hash'])->doesntExist()) {
-                        Log::debug('Transaction ID does not exist');
-
-                        $txnAmount = $transaction['value'] / 1000000000000000000;
-                        $timestamp = $transaction['timeStamp'];
-                        $transaction_date = Carbon::createFromTimestamp($timestamp)->setTimezone('GMT+8');
-
-                        $merchantRateProfile = RateProfile::find($merchant->rate_id);
-                        $fee = (($txnAmount * $merchantRateProfile->deposit_fee) / 100);
-
-                        
-                        
-                        $inputAmount = $pending->amount; // Amount the user is expected to receive
-                        $start_range = $txnAmount - $payoutSetting->diff_amount;
-                        $end_range = $txnAmount + $payoutSetting->diff_amount;
-
-                        if ($inputAmount >= $start_range && $inputAmount <= $end_range) {
-                            $pending->update([
-                                'from_wallet' => $transaction['from'],
-                                'txID' => $transaction['hash'],
-                                'block_time' => $transaction['timeStamp'],
-                                'block_number' => $transaction['blockNumber'],
-                                'txn_amount' => $txnAmount,
-                                'fee' => $fee,
-                                'total_amount' => $txnAmount - $fee,
-                                'transaction_date' => $transaction_date,
-                                'status' => 'success',
-                                'txreceipt_status' => $transaction['txreceipt_status'],
-                                'token_symbol' => $transaction['tokenSymbol'] ?? null,
-                                'transfer_status' => 'valid',
-                            ]);
-                        } else {
-                            $pending->update([
-                                'from_wallet' => $transaction['from'],
-                                'txID' => $transaction['hash'],
-                                'block_time' => $transaction['timeStamp'],
-                                'block_number' => $transaction['blockNumber'],
-                                'txn_amount' => $txnAmount,
-                                'fee' => $fee,
-                                'total_amount' => $txnAmount - $fee,
-                                'transaction_date' => $transaction_date,
-                                'status' => 'success',
-                                'txreceipt_status' => $transaction['txreceipt_status'],
-                                'token_symbol' => $transaction['tokenSymbol'] ?? null,
-                                'transfer_status' => 'invalid',
-                            ]);
-                        }
-
-                        
-
-                        if ($pending->transaction_type === 'deposit') {
-                            $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
-
-                            $merchantWallet->gross_deposit += $txnAmount; //gross amount 
-                            $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
-                            $merchantWallet->total_fee += $gross_fee; // total fee
-                            $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
-                            
-                            $merchantWallet->total_deposit += $txnAmount;
-
-                            $merchantWallet->save();
-
-                        }
-
-                        $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
-                        $token = Str::random(32);
-
-                        $params = [
-                            'merchant_id' => $pending->merchant_id,
-                            'client_id' => $pending->client_id,
-                            'transaction_type' => $pending->transaction_type,
-                            'from_wallet' => $pending->from_wallet,
-                            'to_wallet' => $pending->to_wallet,
-                            'txID' => $pending->txID,
-                            'block_time' => $pending->block_time,
-                            'block_number' => $pending->block_number,
-                            'transfer_amount' => $pending->txn_amount,
-                            'transfer_amount_type' => $pending->transfer_status,
-                            'transaction_number' => $pending->transaction_number,
-                            'amount' => $pending->amount,
-                            'status' => $pending->status,
-                            'txreceipt_status' => $pending->txreceipt_status,
-                            'payment_method' => $pending->payment_method,
-                            'payment_type' => $pending->payment_type,
-                            'created_at' => $pending->created_at,
-                            'description' => $pending->description,
-                            'vCode' => $vCode,
-                            'token' => $token,
-                        ];
-
-                        $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
-                        $response = Http::post($callBackUrl, $params);
-                        
-                        // Log::debug('deposit Callback', $response);
-                        Log::debug('deposit Callback', [
-                            'status' => $response->status(),
-                        ]);
-
-                    } else {
-                        Log::debug('bep-20 txid', ['transaction_id' => $transaction['hash']]);
-                    }
-                }
             }
         }
+    }
+
+    protected function processBep20Payment(Transaction $pending, Merchant $merchant, MerchantWallet $merchantWallet, PayoutConfig $payoutSetting)
+    {
+        $blockTimeStamp = $pending->created_at->timestamp;
+        $getStartBlock = Http::get('https://api.bscscan.com/api', [
+            'module' => 'block',
+            'action' => 'getblocknobytime',
+            'timestamp' => $blockTimeStamp,
+            'closest' => 'after',
+            'apikey' => $payoutSetting->api_key,
+        ]);
+
+        if (!$getStartBlock->successful()) {
+            Log::error('Failed to get start block', ['response' => $getStartBlock->json()]);
+            return;
+        }
+
+        $startBlock = $getStartBlock['result'];
+
+        $txListResponse = Http::get('https://api.bscscan.com/api', [
+            'module' => 'account',
+            'action' => 'txlist',
+            'address' => $pending->to_wallet,
+            'startblock' => $startBlock,
+            'endblock' => 99999999,
+            'sort' => 'desc',
+            'apikey' => $payoutSetting->api_key,
+        ]);
+
+        $tokenTxResponse = Http::get('https://api.bscscan.com/api', [
+            'module' => 'account',
+            'action' => 'tokentx',
+            'address' => $pending->to_wallet,
+            'startblock' => $startBlock,
+            'endblock' => 99999999,
+            'sort' => 'desc',
+            'apikey' => $payoutSetting->api_key,
+        ]);
+
+        if (!$txListResponse->successful() || !$tokenTxResponse->successful()) {
+            Log::error('Failed to fetch BEP-20 transactions', [
+                'txListResponse' => $txListResponse->json(),
+                'tokenTxResponse' => $tokenTxResponse->json(),
+            ]);
+            return;
+        }
+
+        $transactions = array_merge($txListResponse->json()['result'], $tokenTxResponse->json()['result']);
+        foreach ($transactions as $transaction) {
+
+            $apiAmount = $transaction['value'] / 1000000000000000000; // 转换为实际金额
+
+            // 检查金额是否在允许的范围内
+            $startRange = $pending->amount - $payoutSetting->diff_amount;
+            $endRange = $pending->amount + $payoutSetting->diff_amount;
+
+            if ($apiAmount >= $startRange && $apiAmount <= $endRange) {
+                // 如果金额匹配，则更新交易
+                $this->updateTransaction($pending, $transaction, $merchant, $merchantWallet, $payoutSetting, 'bep-20');
+                break; // 找到匹配的交易后跳出循环
+            } else {
+                Log::debug('Skipping transaction due to amount mismatch', [
+                    'pending_amount' => $pending->amount,
+                    'api_amount' => $apiAmount,
+                ]);
+            }
+            
+        }
+    }
+
+    protected function updateTransaction(Transaction $pending, array $transaction, Merchant $merchant, MerchantWallet $merchantWallet, PayoutConfig $payoutSetting, string $paymentType)
+    {
+        $txID = $transaction['transaction_id'] ?? $transaction['hash'] ?? null;
+        if (!$txID || Transaction::where('txID', $txID)->exists()) {
+            Log::debug('Transaction ID already exists or is invalid', ['txID' => $txID]);
+            return;
+        }
+
+        $txnAmount = $paymentType === 'trc-20' ? $transaction['value'] / 1000000 : $transaction['value'] / 1000000000000000000;
+        $timestamp = $paymentType === 'trc-20' ? $transaction['block_timestamp'] / 1000 : $transaction['timeStamp'];
+        $transactionDate = Carbon::createFromTimestamp($timestamp)->setTimezone('GMT+8');
+
+        $merchantRateProfile = RateProfile::find($merchant->rate_id);
+        $fee = ($txnAmount * $merchantRateProfile->deposit_fee) / 100;
+
+        // 检查金额范围
+        $startRange = $pending->amount - $payoutSetting->diff_amount;
+        $endRange = $pending->amount + $payoutSetting->diff_amount;
+        $apiAmount = $paymentType === 'trc-20' ? $transaction['value'] / 1000000 : $transaction['value'] / 1000000000000000000;
+
+        $transferStatus = ($apiAmount >= $startRange && $apiAmount <= $endRange) ? 'valid' : 'invalid';
+
+        $pending->update([
+            'from_wallet' => $transaction['from'],
+            'txID' => $txID,
+            'block_time' => $paymentType === 'trc-20' ? $transaction['block_timestamp'] : $transaction['timeStamp'],
+            'block_number' => $transaction['blockNumber'] ?? null,
+            'txn_amount' => $txnAmount,
+            'fee' => $fee,
+            'total_amount' => $txnAmount - $fee,
+            'transaction_date' => $transactionDate,
+            'status' => 'success',
+            'transfer_status' => $transferStatus,
+            'txreceipt_status' => $transaction['txreceipt_status'] ?? null,
+            'token_symbol' => $transaction['token_info']['symbol'] ?? $transaction['tokenSymbol'] ?? null,
+        ]);
+
+        if ($pending->transaction_type === 'deposit') {
+            $merchantWallet->gross_deposit += $txnAmount;
+            $grossFee = ($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100;
+            $merchantWallet->total_fee += $grossFee;
+            $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $grossFee;
+            $merchantWallet->total_deposit += $txnAmount;
+            $merchantWallet->save();
+        }
+
+        $this->sendCallback($pending, $payoutSetting);
+    }
+
+    protected function sendCallback(Transaction $pending, PayoutConfig $payoutSetting)
+    {
+        $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
+        $token = Str::random(32);
+
+        $params = [
+            'merchant_id' => $pending->merchant_id,
+            'client_id' => $pending->client_id,
+            'transaction_type' => $pending->transaction_type,
+            'from_wallet' => $pending->from_wallet,
+            'to_wallet' => $pending->to_wallet,
+            'txID' => $pending->txID,
+            'block_time' => $pending->block_time,
+            'block_number' => $pending->block_number,
+            'transfer_amount' => $pending->txn_amount,
+            'transfer_amount_type' => $pending->transfer_status,
+            'transaction_number' => $pending->transaction_number,
+            'amount' => $pending->amount,
+            'status' => $pending->status,
+            'txreceipt_status' => $pending->txreceipt_status,
+            'payment_method' => $pending->payment_method,
+            'payment_type' => $pending->payment_type,
+            'created_at' => $pending->created_at,
+            'description' => $pending->description,
+            'vCode' => $vCode,
+            'token' => $token,
+        ];
+
+        $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
+        $response = Http::post($callBackUrl, $params);
+
+        Log::debug('Callback response', ['status' => $response->status()]);
     }
 }
