@@ -33,7 +33,8 @@ class CheckDepositStatus extends Command
         // 将 Collection 转换为数组
         $pendingPaymentsArray = $pendingPayments->toArray();
         
-        while ($pending = array_shift($pendingPaymentsArray)) {
+        while ($pending = $pendingPayments->shift()) {
+            // $pending 是 Transaction 模型实例
             $this->processPendingPayment($pending);
         }
 
