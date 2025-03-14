@@ -52,7 +52,7 @@ class CheckExpiredDeposit extends Command
                 ]);
 
                 $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
-                $vCode = md5($pending->amount . $pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
+                $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
                 $token = Str::random(32);
 
                 $params = [
