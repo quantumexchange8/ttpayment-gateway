@@ -204,7 +204,7 @@ class CheckDepositStatus extends Command
         $endRange = $pending->amount + $payoutSetting->diff_amount;
         $apiAmount = $paymentType === 'trc-20' ? $transaction['value'] / 1000000 : $transaction['value'] / 1000000000000000000;
 
-        $transferStatus = ($apiAmount < $startRange && $apiAmount <= $endRange) ? 'valid' : 'invalid';
+        $transferStatus = ($apiAmount >= $startRange && $apiAmount <= $endRange) ? 'valid' : 'invalid';
 
         $pending->update([
             'from_wallet' => $transaction['from'],
