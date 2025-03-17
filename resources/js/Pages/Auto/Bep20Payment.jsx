@@ -152,15 +152,29 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
 
                 console.log('latestTransaction Transfer', data.latestTransaction)
 
-                if (data.latestTransaction.hash) {
-                    post('/updateTransaction', {
-                        preserveScroll: true,
-                        onSuccess: () => {
-                            window.location.href = `/returnTransaction?transaction_id=${transaction.id}&token=${storedToken}&merchant_id=${merchant.id}&referer=${referer}`;
-                        }
-                    });
-                    // clearInterval(pollingInterval);
+                // if (data.latestTransaction.hash) {
+
+                const response = await axios.post('/updateTransaction', {
+                    latestTransaction: latestTransaction,
+                    transaction: transaction.id,
+                    merchantId: merchant.id,
+                    submitType: '',
+                    storedToken: storedToken,
+                    referer: referer,
+                });
+
+                if (response.status === 200) {
+                    window.location.href = `/returnTransaction?transaction_id=${transaction.id}&token=${storedToken}&merchant_id=${merchant.id}&referer=${referer}`;
                 }
+                
+                    // post('/updateTransaction', {
+                    //     preserveScroll: true,
+                    //     onSuccess: () => {
+                    //         window.location.href = `/returnTransaction?transaction_id=${transaction.id}&token=${storedToken}&merchant_id=${merchant.id}&referer=${referer}`;
+                    //     }
+                    // });
+                    // clearInterval(pollingInterval);
+                // }
             }
 
         } catch (error) {
