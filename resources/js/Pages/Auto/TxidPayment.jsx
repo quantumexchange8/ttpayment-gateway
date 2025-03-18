@@ -9,7 +9,7 @@ import Button from "@/Components/Button";
 import InputError from "@/Components/InputError";
 import axios from "axios";
 
-export default function TxidPayment({ merchant, merchantClientId, vCode, orderNumber, expirationTime, transaction, tokenAddress, lang, referer, amount }) {
+export default function TxidPayment({ merchant, merchantClientId, vCode, orderNumber, expirationTime, transaction, tokenAddress, lang, referer, amount, storedToken }) {
 
     const { t, i18n } = useTranslation();
     const [tooltipText, setTooltipText] = useState('copy');
@@ -53,7 +53,12 @@ export default function TxidPayment({ merchant, merchantClientId, vCode, orderNu
         try {
             setIsLoading(true);    
             setReturnError(null)
-            const response = await axios.post('/updateTxid', data);
+            const response = await axios.post('/updateTxid', data); 
+            console.log('response', response.status)
+
+            if (response.status === 200) {
+                window.location.href = `/returnTransaction?transaction_id=${transaction.id}&token=${storedToken}&merchant_id=${merchant.id}&referer=${referer}`
+            }
 
         } catch (error) {
             if (error.response && error.response.status === 422) {
@@ -67,8 +72,6 @@ export default function TxidPayment({ merchant, merchantClientId, vCode, orderNu
             setIsLoading(false);
         }
     }
-
-    console.log(returnErrors)
 
     return (
         <div className="w-full flex flex-col items-center justify-center gap-5 px-3 md:px-0 min-h-[80vh]">

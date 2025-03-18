@@ -69,7 +69,7 @@ class TransactionController extends Controller
             }
 
             // check transaction number for both crm and gateway exist or not
-            $findTxnNo = Transaction::where('merchant_id', $merchantId)->where('amount', $amount)->where('transaction_number', $transactionNo)->where('status', 'pending')->first();
+            $findTxnNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->where('status', 'pending')->first();
             $checkOrderNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->first();
             $paymentMethod = PayoutConfig::where('merchant_id', $merchantId)->where('live_paymentUrl', $referer)->first();
 
@@ -109,6 +109,7 @@ class TransactionController extends Controller
                             'referer' => $referer,
                             'apikey' => $paymentMethod->api_key,
                             'amount' => $amount,
+                            'storedToken' => $storedToken,
                         ]);
                     }
 
