@@ -668,62 +668,68 @@ class TransactionController extends Controller
         }
 
         foreach ($transactionInfo['trc20TransferInfo'] as $trcTransfer) {
+
+            if ($trcTransfer['to_address'] === $transaction->to_wallet) {
+                $txnAmount = $trcTransfer['amount_str'] / 1000000;
+                $merchantRateProfile = RateProfile::find($merchant->rate_id);
+                $fee = ($txnAmount * $merchantRateProfile->deposit_fee) / 100;
+
+                $start_range = $transaction->amount - $payoutConfig->diff_amount;
+                $end_range = $transaction->amount + $payoutConfig->diff_amount;
+
+                $transferStatus = ($txnAmount >= $start_range && $txnAmount <= $end_range) ? 'valid' : 'invalid';
+
+                $timestamp = $transactionInfo['timestamp'];
+                $transactionDate = Carbon::createFromTimestampMs($timestamp)->toDateTimeString();
+
+                $transaction->update([
+                    'from_wallet' => $trcTransfer['from_address'],
+                    'txID' => $request->txid,
+                    'block_time' => $transactionInfo['timestamp'],
+                    'txn_amount' => $txnAmount,
+                    'fee' => $fee,
+                    'total_amount' => $txnAmount - $fee,
+                    'status' => 'success',
+                    'transfer_status' => $transferStatus,
+                    'transaction_date' => $transactionDate,
+                    'token_symbol' => $trcTransfer['tokenType'],
+                ]);
+
+                $vCode = md5($transaction->transaction_number . $payoutConfig->appId . $payoutConfig->merchant_id);
+                $token = Str::random(32);
+
+                $params = [
+                    'merchant_id' => $transaction->merchant_id,
+                    'client_id' => $transaction->client_id,
+                    'transaction_type' => $transaction->transaction_type,
+                    'from_wallet' => $transaction->from_wallet,
+                    'to_wallet' => $transaction->to_wallet,
+                    'txID' => $transaction->txID,
+                    'block_time' => $transaction->block_time,
+                    'block_number' => $transaction->block_number,
+                    'transfer_amount' => $transaction->txn_amount,
+                    'transfer_amount_type' => $transaction->transfer_status,
+                    'transaction_number' => $transaction->transaction_number,
+                    'amount' => $transaction->amount,
+                    'status' => $transaction->status,
+                    'txreceipt_status' => $transaction->txreceipt_status,
+                    'payment_method' => $transaction->payment_method,
+                    'payment_type' => $transaction->payment_type,
+                    'created_at' => $transaction->created_at,
+                    'description' => $transaction->description,
+                    'vCode' => $vCode,
+                    'token' => $token,
+                ];
+
+                $callBackUrl = $payoutConfig->live_paymentUrl . $payoutConfig->callBackUrl;
+                $response = Http::post($callBackUrl, $params);
+
+                return response()->json(['success' => 'Transaction updated successfully.']);
+            } else {
+                return response()->json(['errors' => ['txid' => 'Invalid to wallet']], 422);
+            }
             
-            $txnAmount = $trcTransfer['amount_str'] / 1000000;
-            $merchantRateProfile = RateProfile::find($merchant->rate_id);
-            $fee = ($txnAmount * $merchantRateProfile->deposit_fee) / 100;
-
-            $start_range = $transaction->amount - $payoutConfig->diff_amount;
-            $end_range = $transaction->amount + $payoutConfig->diff_amount;
-
-            $transferStatus = ($txnAmount >= $start_range && $txnAmount <= $end_range) ? 'valid' : 'invalid';
-
-            $timestamp = $transactionInfo['timestamp'];
-            $transactionDate = Carbon::createFromTimestampMs($timestamp)->toDateTimeString();
-
-            $transaction->update([
-                'from_wallet' => $trcTransfer['from_address'],
-                'txID' => $request->txid,
-                'block_time' => $transactionInfo['timestamp'],
-                'txn_amount' => $txnAmount,
-                'fee' => $fee,
-                'total_amount' => $txnAmount - $fee,
-                'status' => 'success',
-                'transfer_status' => $transferStatus,
-                'transaction_date' => $transactionDate,
-                'token_symbol' => $trcTransfer['tokenType'],
-            ]);
-
-            $vCode = md5($transaction->transaction_number . $payoutConfig->appId . $payoutConfig->merchant_id);
-            $token = Str::random(32);
-
-            $params = [
-                'merchant_id' => $transaction->merchant_id,
-                'client_id' => $transaction->client_id,
-                'transaction_type' => $transaction->transaction_type,
-                'from_wallet' => $transaction->from_wallet,
-                'to_wallet' => $transaction->to_wallet,
-                'txID' => $transaction->txID,
-                'block_time' => $transaction->block_time,
-                'block_number' => $transaction->block_number,
-                'transfer_amount' => $transaction->txn_amount,
-                'transfer_amount_type' => $transaction->transfer_status,
-                'transaction_number' => $transaction->transaction_number,
-                'amount' => $transaction->amount,
-                'status' => $transaction->status,
-                'txreceipt_status' => $transaction->txreceipt_status,
-                'payment_method' => $transaction->payment_method,
-                'payment_type' => $transaction->payment_type,
-                'created_at' => $transaction->created_at,
-                'description' => $transaction->description,
-                'vCode' => $vCode,
-                'token' => $token,
-            ];
-
-            $callBackUrl = $payoutConfig->live_paymentUrl . $payoutConfig->callBackUrl;
-            $response = Http::post($callBackUrl, $params);
-
-            return response()->json(['success' => 'Transaction updated successfully.']);
+            
         }
     }
 
