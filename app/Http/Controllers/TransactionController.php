@@ -690,7 +690,7 @@ class TransactionController extends Controller
                 'status' => 'success',
                 'transfer_status' => $transferStatus,
                 'transaction_date' => $transactionDate,
-                'token_symbol' => $transactionInfo['tokenType'],
+                'token_symbol' => $trcTransfer['tokenType'],
             ]);
 
             $vCode = md5($transaction->transaction_number . $payoutConfig->appId . $payoutConfig->merchant_id);
