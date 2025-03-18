@@ -34,6 +34,8 @@ Route::get('/sessionTimeOut', [TransactionController::class, 'sessionTimeOut'])-
 Route::post('/returnSession', [TransactionController::class, 'returnSession'])->name('returnSession');
 
 Route::post('/updateTransaction', [TransactionController::class, 'updateClientTransaction'])->name('updateTransaction');
+Route::post('/updateTxid', [TransactionController::class, 'updateTxid'])->name('updateTxid');
+
 Route::get('/returnTransaction', [TransactionController::class, 'returnTransaction'])->name('returnTransaction');
 Route::post('/returnUrl', [TransactionController::class, 'returnUrl'])->name('returnUrl');
 

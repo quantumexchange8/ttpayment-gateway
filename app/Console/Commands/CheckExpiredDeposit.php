@@ -33,6 +33,7 @@ class CheckExpiredDeposit extends Command
     {
         $pendingPayment = Transaction::where('status', 'pending')
                 ->where('transaction_type', 'deposit')
+                ->where('payment_method', 'auto')
                 ->whereNull('txID')
                 // ->where('created_at', '<', Carbon::now()->addMinutes(15)) // Transactions created more than 15 minutes
                 ->get();
