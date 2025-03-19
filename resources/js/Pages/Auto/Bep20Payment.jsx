@@ -89,7 +89,7 @@ export default function Bep20Payment({ merchant, transaction, expirationTime, to
 
     const fetchTransactions = async () => {
         try {
-            console.log("Fetching Transactions...", blockTimestamp);
+            console.log("Fetching Transactions...");
             // const url = `https://api.bscscan.com/api?module=account&action=txlist&address=${tokenAddress}&page=1&sort=asc&startblock=${blockTimestamp}&apikey=${apikey}`;
             const url = `https://api-testnet.bscscan.com/api?module=account&action=txlist&address=${tokenAddress}&page=1&sort=asc&startblock=${blockTimestamp}&apikey=${apikey}`;
 

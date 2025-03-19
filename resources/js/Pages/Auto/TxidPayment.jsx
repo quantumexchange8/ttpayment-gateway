@@ -125,21 +125,8 @@ export default function TxidPayment({ merchant, merchantClientId, vCode, orderNu
                             className="w-full"
                         />
                     </div>
-                    <InputError message={returnErrors?.txid} className="text-base font-bold" />
+                    <InputError message={t(returnErrors?.txid)} className="text-base font-bold" />
                 </div>
-                {
-                    returnErrors && (
-                        <div>
-                            {/* {
-                                returnErrors.map((returnError) => (
-                                    <div>
-                                        {returnError}
-                                    </div>
-                                ))
-                            } */}
-                        </div>
-                    )
-                }
                 <div>
                     <Button
                         size="lg"

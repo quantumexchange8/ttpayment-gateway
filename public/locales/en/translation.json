@@ -5,5 +5,11 @@
     "cancel": "Cancel",
     "remark1": "Please ensure that the wallet transfer is successfully completed before closing this page.",
     "remark2": "Complete the transfer before the countdown ends.",
-    "note": "Note"
+    "note": "Note",
+    "The txid field is required.": "The txid field is required.",
+    "Invalid TxID / TxID already exists": "Invalid TxID / TxID already exists",
+    "Failed to fetch TRC-20 hash": "Failed to fetch TRC-20 hash",
+    "Invalid or incomplete TRC-20 transaction": "Invalid or incomplete TRC-20 transaction",
+    "Transaction updated successfully.": "Transaction updated successfully.",
+    "Invalid to wallet": "Invalid to wallet"
 }

@@ -5,5 +5,11 @@
     "cancel": "取消",
     "remark1": "请务必完成钱包转账成功后才关闭此页面.",
     "remark2": "在倒数结束前完成转账.",
-    "note": "提示"
+    "note": "提示",
+    "The txid field is required.": "交易ID必填",
+    "Invalid TxID / TxID already exists": "无效的 TxID/TxID 已存在",
+    "Failed to fetch TRC-20 hash": "无法获取 TRC-20 哈希",
+    "Invalid or incomplete TRC-20 transaction": "TRC-20 交易无效或不完整",
+    "Transaction updated successfully.": "交易成功",
+    "Invalid to wallet": "对钱包无效"
 }
