@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Ladumor\OneSignal\OneSignal;
 
 class TransactionController extends Controller
@@ -67,19 +68,22 @@ class TransactionController extends Controller
             }
 
             // check transaction number for both crm and gateway exist or not
-            $findTxnNo = Transaction::where('merchant_id', $merchantId)->where('amount', $amount)->where('transaction_number', $transactionNo)->where('status', 'pending')->first();
+            $findTxnNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->where('status', 'pending')->first();
             $checkOrderNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->first();
             $paymentMethod = PayoutConfig::where('merchant_id', $merchantId)->where('live_paymentUrl', $referer)->first();
 
             // if transaction exist return to it
             if ($findTxnNo) {
 
-                if (Carbon::now() > $findTxnNo->expired_at) {
-                    $findTxnNo->status = 'fail';
-                    $findTxnNo->save();
-
-                    return Inertia::render('Welcome');
+                if ($findTxnNo->payment_method === 'auto') {
+                    if (Carbon::now() > $findTxnNo->expired_at) {
+                        $findTxnNo->status = 'fail';
+                        $findTxnNo->save();
+    
+                        return Inertia::render('Welcome');
+                    }
                 }
+                
 
                 $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
                 
@@ -91,42 +95,73 @@ class TransactionController extends Controller
 
                 
 
-                if ($paymentMethod->payment_method === 'bep-20') {
-                    return Inertia::render('Auto/Bep20Payment', [
-                        'merchant' => $merchant,
-                        'expirationTime' => $expirationTime,
-                        'transaction' => $transaction,
-                        'tokenAddress' => $tokenAddress,
-                        'storedToken' => $storedToken,
-                        'lang' => $lang,
-                        'referer' => $referer,
-                        'apikey' => $paymentMethod->api_key,
-                        'amount' => $amount,
-                    ]);
+                if ($merchant->deposit_type === "2") {
+
+                    
+                    if ($paymentMethod->payment_method === 'trc-20') {
+                        return Inertia::render('Auto/TxidPayment', [
+                            'merchant' => $merchant,
+                            'expirationTime' => $expirationTime,
+                            'transaction' => $transaction,
+                            'tokenAddress' => $tokenAddress,
+                            'lang' => $lang,
+                            'referer' => $referer,
+                            'apikey' => $paymentMethod->api_key,
+                            'amount' => $amount,
+                            'storedToken' => $storedToken,
+                        ]);
+                    }
+
+                    if ($paymentMethod->payment_method === 'bep-20') {
+                        return Inertia::render('Auto/Bep20Payment', [
+                            'merchant' => $merchant,
+                            'expirationTime' => $expirationTime,
+                            'transaction' => $transaction,
+                            'tokenAddress' => $tokenAddress,
+                            'lang' => $lang,
+                            'referer' => $referer,
+                            'apikey' => $paymentMethod->api_key,
+                            'amount' => $amount,
+                        ]);
+                    }
+
+                } else {
+
+                    if ($paymentMethod->payment_method === 'bep-20') {
+                        return Inertia::render('Auto/Bep20Payment', [
+                            'merchant' => $merchant,
+                            'expirationTime' => $expirationTime,
+                            'transaction' => $transaction,
+                            'tokenAddress' => $tokenAddress,
+                            'storedToken' => $storedToken,
+                            'lang' => $lang,
+                            'referer' => $referer,
+                            'apikey' => $paymentMethod->api_key,
+                            'amount' => $amount,
+                        ]);
+                    }
+    
+                    if ($paymentMethod->payment_method === 'trc-20') {
+                        return Inertia::render('Auto/ValidPayment', [
+                            'merchant' => $merchant,
+                            'expirationTime' => $expirationTime,
+                            'transaction' => $transaction,
+                            'tokenAddress' => $tokenAddress,
+                            'storedToken' => $storedToken,
+                            'lang' => $lang,
+                            'referer' => $referer,
+                            'apikey' => $paymentMethod->api_key,
+                            'amount' => $amount,
+                        ]);
+                    }
                 }
 
-                if ($paymentMethod->payment_method === 'trc-20') {
-                    return Inertia::render('Auto/ValidPayment', [
-                        'merchant' => $merchant,
-                        'expirationTime' => $expirationTime,
-                        'transaction' => $transaction,
-                        'tokenAddress' => $tokenAddress,
-                        'storedToken' => $storedToken,
-                        'lang' => $lang,
-                        'referer' => $referer,
-                        'apikey' => $paymentMethod->api_key,
-                        'amount' => $amount,
-                    ]);
-                }
+                
                 
             } else {
                 // not exist create new
                 // $validTime = 15; //minutes
                 $now = Carbon::now();
-
-                if ($checkOrderNo) {
-                    return Inertia::render('Welcome');
-                }
     
                 $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
                 $randomWalletAddress = $merchant->merchantWalletAddress->random();
@@ -134,7 +169,7 @@ class TransactionController extends Controller
 
                 $merchantClientId = $request->userId;
     
-                if($merchant->deposit_type == 0 ) {
+                if($merchant->deposit_type == "0" ) {
 
                     $transaction = Transaction::create([
                         'merchant_id' => $merchantId,
@@ -163,7 +198,7 @@ class TransactionController extends Controller
                         'lang' => $lang,
                         'origin_domain' => $referer,
                     ]);
-                } else if ($merchant->deposit_type == 1) {
+                } else if ($merchant->deposit_type == "1") {
 
                     $storedToken = $request->session()->get('session_token');
     
@@ -230,6 +265,72 @@ class TransactionController extends Controller
                             'apikey' => $paymentMethod->api_key,
                         ]);
                     }
+                } else if ($merchant->deposit_type == "2") {
+                    $storedToken = $request->session()->get('session_token');
+
+                    if ($paymentMethod->payment_method === 'bep-20') {
+
+                        $transaction = Transaction::create([
+                            'merchant_id' => $merchantId,
+                            'payment_type' => 'bep-20',
+                            'client_id' => $merchantClientId,
+                            'client_name' => $merchantClientName,
+                            'client_email' => $merchantClientEmail,
+                            'transaction_type' => 'deposit',
+                            'payment_method' => 'manual',
+                            'status' => 'pending',
+                            'amount' => $amount,
+                            'transaction_number' => $transactionNo,
+                            'tt_txn' => RunningNumberService::getID('transaction'),
+                            'to_wallet' => $tokenAddress,
+                            'origin_domain' => $referer,
+                            'expired_at' => null,
+                        ]);
+
+                        return Inertia::render('Auto/Bep20Payment', [
+                            'merchant' => $merchant,
+                            'amount' => $amount,
+                            'expirationTime' => $transaction->expired_at,
+                            'transaction' => $transaction,
+                            'tokenAddress' => $tokenAddress,
+                            'storedToken' => $storedToken,
+                            'lang' => $lang,
+                            'referer' => $referer,
+                            'apikey' => $paymentMethod->api_key,
+                        ]);
+                    }
+
+                    if ($paymentMethod->payment_method === 'trc-20') {
+
+                        $transaction = Transaction::create([
+                            'merchant_id' => $merchantId,
+                            'payment_type' => 'trc-20',
+                            'client_id' => $merchantClientId,
+                            'client_name' => $merchantClientName,
+                            'client_email' => $merchantClientEmail,
+                            'transaction_type' => 'deposit',
+                            'payment_method' => 'manual',
+                            'status' => 'pending',
+                            'amount' => $amount,
+                            'transaction_number' => $transactionNo,
+                            'tt_txn' => RunningNumberService::getID('transaction'),
+                            'to_wallet' => $tokenAddress,
+                            'origin_domain' => $referer,
+                            'expired_at' => null,
+                        ]);
+
+                        return Inertia::render('Auto/TxidPayment', [
+                            'merchant' => $merchant,
+                            'amount' => $amount,
+                            'expirationTime' => $transaction->expired_at,
+                            'transaction' => $transaction,
+                            'tokenAddress' => $tokenAddress,
+                            'storedToken' => $storedToken,
+                            'lang' => $lang,
+                            'referer' => $referer,
+                            'apikey' => $paymentMethod->api_key,
+                        ]);
+                    }
                 }
             }   
         }
@@ -244,7 +345,7 @@ class TransactionController extends Controller
         $merchant = Merchant::where('id', $request->merchantId)->with(['merchantWalletAddress.walletAddress', 'merchantEmail', 'merchantWallet'])->first();
         $paymentMethod = PayoutConfig::where('merchant_id', $merchant->id)->first();
 
-        if ($merchant->deposit_type == 1) {
+        if ($merchant->deposit_type == "1") {
 
             if ($paymentMethod->payment_method === 'trc-20') {
                 $transactionData = $request->latestTransaction;
@@ -532,6 +633,104 @@ class TransactionController extends Controller
             }
 
             return redirect()->route('returnTransaction', ['transaction_id' => $transaction->id]);
+        }
+    }
+
+    public function updateTxid(Request $request)
+    {
+
+        $request->validate([
+            'txid' => 'required|string',
+            'transaction' => 'required|exists:transactions,id',
+        ]);
+
+        $transaction = Transaction::find($request->transaction);
+        $validateTxid = Transaction::where('txID', $request->txid)->first();
+        $merchant = Merchant::find($transaction->merchant_id);
+        $payoutConfig = PayoutConfig::where('merchant_id', $merchant->id)->where('live_paymentUrl', $transaction->origin_domain)->first();
+
+        if (Transaction::where('txID', $request->txid)->exists()) {
+            return response()->json(['errors' => ['txid' => 'Invalid TxID / TxID already exists']], 422);
+        }
+
+        $response = Http::get('https://apilist.tronscanapi.com/api/transaction-info', [
+            'hash' => $request->txid,
+        ]);
+
+        if (!$response->successful()) {
+            return response()->json(['errors' => ['txid' => 'Failed to fetch TRC-20 hash']], 422);
+        }
+        
+        Log::info('Transaction-info response', ['hash' => $response]);
+
+        $transactionInfo = $response->json();
+        if (empty($transactionInfo['trc20TransferInfo'])) {
+            return response()->json(['errors' => ['txid' => 'Invalid or incomplete TRC-20 transaction']], 422);
+        }
+
+        foreach ($transactionInfo['trc20TransferInfo'] as $trcTransfer) {
+
+            if ($trcTransfer['to_address'] === $transaction->to_wallet) {
+                $txnAmount = $trcTransfer['amount_str'] / 1000000;
+                $merchantRateProfile = RateProfile::find($merchant->rate_id);
+                $fee = ($txnAmount * $merchantRateProfile->deposit_fee) / 100;
+
+                $start_range = $transaction->amount - $payoutConfig->diff_amount;
+                $end_range = $transaction->amount + $payoutConfig->diff_amount;
+
+                $transferStatus = ($txnAmount >= $start_range && $txnAmount <= $end_range) ? 'valid' : 'invalid';
+
+                $timestamp = $transactionInfo['timestamp'];
+                $transactionDate = Carbon::createFromTimestampMs($timestamp)->toDateTimeString();
+
+                $transaction->update([
+                    'from_wallet' => $trcTransfer['from_address'],
+                    'txID' => $request->txid,
+                    'block_time' => $transactionInfo['timestamp'],
+                    'txn_amount' => $txnAmount,
+                    'fee' => $fee,
+                    'total_amount' => $txnAmount - $fee,
+                    'status' => 'success',
+                    'transfer_status' => $transferStatus,
+                    'transaction_date' => $transactionDate,
+                    'token_symbol' => $trcTransfer['tokenType'],
+                ]);
+
+                $vCode = md5($transaction->transaction_number . $payoutConfig->appId . $payoutConfig->merchant_id);
+                $token = Str::random(32);
+
+                $params = [
+                    'merchant_id' => $transaction->merchant_id,
+                    'client_id' => $transaction->client_id,
+                    'transaction_type' => $transaction->transaction_type,
+                    'from_wallet' => $transaction->from_wallet,
+                    'to_wallet' => $transaction->to_wallet,
+                    'txID' => $transaction->txID,
+                    'block_time' => $transaction->block_time,
+                    'block_number' => $transaction->block_number,
+                    'transfer_amount' => $transaction->txn_amount,
+                    'transfer_amount_type' => $transaction->transfer_status,
+                    'transaction_number' => $transaction->transaction_number,
+                    'amount' => $transaction->amount,
+                    'status' => $transaction->status,
+                    'txreceipt_status' => $transaction->txreceipt_status,
+                    'payment_method' => $transaction->payment_method,
+                    'payment_type' => $transaction->payment_type,
+                    'created_at' => $transaction->created_at,
+                    'description' => $transaction->description,
+                    'vCode' => $vCode,
+                    'token' => $token,
+                ];
+
+                $callBackUrl = $payoutConfig->live_paymentUrl . $payoutConfig->callBackUrl;
+                $response = Http::post($callBackUrl, $params);
+
+                return response()->json(['success' => 'Transaction updated successfully.']);
+            } else {
+                return response()->json(['errors' => ['txid' => 'Invalid to wallet']], 422);
+            }
+            
+            
         }
     }
 
