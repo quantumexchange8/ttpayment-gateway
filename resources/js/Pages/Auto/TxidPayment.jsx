@@ -8,6 +8,7 @@ import Input from "@/Components/Input";
 import Button from "@/Components/Button";
 import InputError from "@/Components/InputError";
 import axios from "axios";
+import { formatAmount } from "@/Composables";
 
 export default function TxidPayment({ merchant, merchantClientId, vCode, orderNumber, expirationTime, transaction, tokenAddress, lang, referer, amount, storedToken }) {
 
@@ -98,6 +99,9 @@ export default function TxidPayment({ merchant, merchantClientId, vCode, orderNu
                     value={tokenAddress} 
                     fgColor="#000000"
                 />
+            </div>
+            <div className="text-gray-900 font-bold text-xxl">
+                ${formatAmount(amount)}
             </div>
             <div className="text-base font-semibold text-center flex flex-col">
                 <div>{t('wallet_address')}:</div>
