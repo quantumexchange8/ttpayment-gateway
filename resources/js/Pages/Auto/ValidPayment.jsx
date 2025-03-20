@@ -70,8 +70,8 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
     useEffect(() => {
         const fetchBlock = async () => {
             try {
-                const response = await fetch('https://api.trongrid.io/walletsolidity/getnowblock');
-                // const response = await fetch('https://nile.trongrid.io/walletsolidity/getnowblock');
+                // const response = await fetch('https://api.trongrid.io/walletsolidity/getnowblock');
+                const response = await fetch('https://nile.trongrid.io/walletsolidity/getnowblock');
                 const result = await response.json();
                 const timestamp = result.block_header.raw_data.timestamp;
                 setBlockTimestamp(timestamp);
@@ -88,8 +88,8 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
         // let pollingInterval;
         const fetchTransactions = async () => {
             try {
-                const url = `https://api.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
-                // const url = `https://nile.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
+                // const url = `https://api.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
+                const url = `https://nile.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
                 const response = await fetch(url);
                 const result = await response.json();
                 console.log(result);

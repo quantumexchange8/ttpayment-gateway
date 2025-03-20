@@ -76,7 +76,7 @@ class CheckDepositStatus extends Command
 
     protected function processTrc20Payment(Transaction $pending, Merchant $merchant, MerchantWallet $merchantWallet, PayoutConfig $payoutSetting)
     {
-        $response = Http::get('https://api.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
+        $response = Http::get('https://nile.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
             'min_timestamp' => $pending->created_at->timestamp * 1000,
             'only_to' => true,
         ]);
@@ -119,7 +119,7 @@ class CheckDepositStatus extends Command
     protected function processBep20Payment(Transaction $pending, Merchant $merchant, MerchantWallet $merchantWallet, PayoutConfig $payoutSetting)
     {
         $blockTimeStamp = $pending->created_at->timestamp;
-        $getStartBlock = Http::get('https://api.bscscan.com/api', [
+        $getStartBlock = Http::get('https://api-testnet.bscscan.com/api', [
             'module' => 'block',
             'action' => 'getblocknobytime',
             'timestamp' => $blockTimeStamp,
@@ -134,7 +134,7 @@ class CheckDepositStatus extends Command
 
         $startBlock = $getStartBlock['result'];
 
-        $txListResponse = Http::get('https://api.bscscan.com/api', [
+        $txListResponse = Http::get('https://api-testnet.bscscan.com/api', [
             'module' => 'account',
             'action' => 'txlist',
             'address' => $pending->to_wallet,
@@ -144,7 +144,7 @@ class CheckDepositStatus extends Command
             'apikey' => $payoutSetting->api_key,
         ]);
 
-        $tokenTxResponse = Http::get('https://api.bscscan.com/api', [
+        $tokenTxResponse = Http::get('https://api-testnet.bscscan.com/api', [
             'module' => 'account',
             'action' => 'tokentx',
             'address' => $pending->to_wallet,
