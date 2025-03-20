@@ -8,6 +8,7 @@
     "remark3": "请在存款成功转账后,",
     "remark4": "务必将交易哈希值 (TXID) 粘贴上并点击提交.",
     "note": "提示",
+    "note1": "提示",
     "The txid field is required.": "交易ID必填",
     "Invalid TxID / TxID already exists": "无效的交易ID / 交易ID已存在",
     "Failed to fetch TRC-20 hash": "無法取得 TRC-20 哈希值",
