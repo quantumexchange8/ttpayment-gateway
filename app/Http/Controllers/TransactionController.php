@@ -97,6 +97,8 @@ class TransactionController extends Controller
 
                 if ($merchant->deposit_type === "2") {
 
+                    $findTxnNo->amount = $amount;
+                    $findTxnNo->save();
                     
                     if ($paymentMethod->payment_method === 'trc-20') {
                         return Inertia::render('Auto/TxidPayment', [
