@@ -88,9 +88,9 @@ export default function TxidPayment({ merchant, merchantClientId, vCode, orderNu
                         {t('please_ensure')}<span className="font-bold">USDT TRC 20</span>.
                     </div>
                     {/* 請確保您發送的代幣是<span className="font-bold">USDT TRC 20</span>. */}
-                    <div className="flex flex-col text-sm font-bold text-center text-[#ef4444] w-full">
+                    <div className="flex flex-col text-sm font-bold text-center text-[#ef4444] max-w-[500px] w-full">
                         <div>{t('note1')}: {t('remark3')}</div>
-                        <div>{t('remark4')}</div>
+                        {/* <div>{t('remark4')}</div> */}
                     </div>
                 </div>
             </div>
