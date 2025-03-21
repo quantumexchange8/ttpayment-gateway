@@ -642,7 +642,7 @@ class TransactionController extends Controller
     {
 
         $request->validate([
-            'txid' => 'required|string',
+            'txid' => 'required|string|size:64',
             'transaction' => 'required|exists:transactions,id',
         ]);
 
