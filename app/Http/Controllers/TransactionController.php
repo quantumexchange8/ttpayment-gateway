@@ -286,7 +286,7 @@ class TransactionController extends Controller
                             'tt_txn' => RunningNumberService::getID('transaction'),
                             'to_wallet' => $tokenAddress,
                             'origin_domain' => $referer,
-                            'expired_at' => null,
+                            'expired_at' => Carbon::now()->addDay(),
                         ]);
 
                         return Inertia::render('Auto/Bep20Payment', [
@@ -318,7 +318,7 @@ class TransactionController extends Controller
                             'tt_txn' => RunningNumberService::getID('transaction'),
                             'to_wallet' => $tokenAddress,
                             'origin_domain' => $referer,
-                            'expired_at' => null,
+                            'expired_at' => Carbon::now()->addDay(),
                         ]);
 
                         return Inertia::render('Auto/TxidPayment', [
