@@ -97,6 +97,8 @@ class TransactionController extends Controller
 
                 if ($merchant->deposit_type === "2") {
 
+                    $findTxnNo->amount = $amount;
+                    $findTxnNo->save();
                     
                     if ($paymentMethod->payment_method === 'trc-20') {
                         return Inertia::render('Auto/TxidPayment', [
@@ -284,7 +286,7 @@ class TransactionController extends Controller
                             'tt_txn' => RunningNumberService::getID('transaction'),
                             'to_wallet' => $tokenAddress,
                             'origin_domain' => $referer,
-                            'expired_at' => null,
+                            'expired_at' => Carbon::now()->addDay(),
                         ]);
 
                         return Inertia::render('Auto/Bep20Payment', [
@@ -316,7 +318,7 @@ class TransactionController extends Controller
                             'tt_txn' => RunningNumberService::getID('transaction'),
                             'to_wallet' => $tokenAddress,
                             'origin_domain' => $referer,
-                            'expired_at' => null,
+                            'expired_at' => Carbon::now()->addDay(),
                         ]);
 
                         return Inertia::render('Auto/TxidPayment', [
@@ -724,6 +726,8 @@ class TransactionController extends Controller
 
                 $callBackUrl = $payoutConfig->live_paymentUrl . $payoutConfig->callBackUrl;
                 $response = Http::post($callBackUrl, $params);
+
+                Log::info('Callback status', ['status' => $response->status()]);
 
                 return response()->json(['success' => 'Transaction updated successfully.']);
             } else {
