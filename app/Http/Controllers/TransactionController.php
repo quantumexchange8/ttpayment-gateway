@@ -727,6 +727,8 @@ class TransactionController extends Controller
                 $callBackUrl = $payoutConfig->live_paymentUrl . $payoutConfig->callBackUrl;
                 $response = Http::post($callBackUrl, $params);
 
+                Log::info('Callback status', ['status' => $response->status()]);
+
                 return response()->json(['success' => 'Transaction updated successfully.']);
             } else {
                 return response()->json(['errors' => ['txid' => 'Invalid to wallet']], 422);
