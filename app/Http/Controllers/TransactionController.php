@@ -729,6 +729,16 @@ class TransactionController extends Controller
 
                 Log::info('Callback status', ['status' => $response->status()]);
 
+                $merchantWallet = MerchantWallet::where('merchant_id', $merchant->id)->first();
+            
+                // wallet
+                $merchantWallet->gross_deposit += $transaction->txn_amount; //gross amount 
+                $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
+                $merchantWallet->total_fee += $gross_fee; // total fee
+                $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
+                $merchantWallet->total_deposit += $transaction->txn_amount;
+                $merchantWallet->save();
+
                 return response()->json(['success' => 'Transaction updated successfully.']);
             } else {
                 return response()->json(['errors' => ['txid' => 'Invalid to wallet']], 422);
