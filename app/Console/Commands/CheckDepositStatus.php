@@ -4,9 +4,11 @@ namespace App\Console\Commands;
 
 use App\Models\Merchant;
 use App\Models\MerchantWallet;
+use App\Models\MerchantWalletAdrress;
 use App\Models\PayoutConfig;
 use App\Models\RateProfile;
 use App\Models\Transaction;
+use App\Models\WalletAddress;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
@@ -193,6 +195,9 @@ class CheckDepositStatus extends Command
             return;
         }
 
+        $findWallet = WalletAddress::where('token_address', $pending->to_wallet)->first();
+        $findWalletAddress = MerchantWalletAdrress::where('merchant_id', $pending->merchant_id)->where('wallet_address_id', $findWallet->id)->first();
+
         $txnAmount = $paymentType === 'trc-20' ? $transaction['value'] / 1000000 : $transaction['value'] / 1000000000000000000;
         $timestamp = $paymentType === 'trc-20' ? $transaction['block_timestamp'] / 1000 : $transaction['timeStamp'];
         $transactionDate = Carbon::createFromTimestamp($timestamp)->setTimezone('GMT+8');
@@ -205,7 +210,11 @@ class CheckDepositStatus extends Command
         $endRange = $pending->amount + $payoutSetting->diff_amount;
         $apiAmount = $paymentType === 'trc-20' ? $transaction['value'] / 1000000 : $transaction['value'] / 1000000000000000000;
 
-        $transferStatus = ($apiAmount >= $startRange && $apiAmount <= $endRange) ? 'valid' : 'invalid';
+        if ($merchant->deposit_type === "2") {
+            $transferStatus = ($apiAmount === $pending->amount) ? 'valid' : 'invalid';
+        } else {
+            $transferStatus = ($apiAmount >= $startRange && $apiAmount <= $endRange) ? 'valid' : 'invalid';
+        }
 
         $pending->update([
             'from_wallet' => $transaction['from'],
@@ -221,6 +230,9 @@ class CheckDepositStatus extends Command
             'txreceipt_status' => $transaction['txreceipt_status'] ?? null,
             'token_symbol' => $transaction['token_info']['symbol'] ?? $transaction['tokenSymbol'] ?? null,
         ]);
+
+        $findWalletAddress->status = 'unassigned';
+        $findWalletAddress->save();
 
         if ($pending->transaction_type === 'deposit') {
             $merchantWallet->gross_deposit += $txnAmount;

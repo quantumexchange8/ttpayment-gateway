@@ -38,6 +38,7 @@ Route::post('/updateTxid', [TransactionController::class, 'updateTxid'])->name('
 
 Route::get('/returnTransaction', [TransactionController::class, 'returnTransaction'])->name('returnTransaction');
 Route::post('/returnUrl', [TransactionController::class, 'returnUrl'])->name('returnUrl');
+Route::post('/return-crm', [TransactionController::class, 'returnCRM'])->name('return-crm');
 
 Route::middleware([PaymentSessionTimeout::class])->group(function () {
     Route::get('payment', [TransactionController::class, 'payment']);

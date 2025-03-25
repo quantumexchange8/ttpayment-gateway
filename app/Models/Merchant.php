@@ -64,6 +64,11 @@ class Merchant extends Model
     {
         return $this->hasMany(MerchantWalletAdrress::class, 'merchant_id', 'id');
     }
+
+    public function assignedWalletAddress(): \Illuminate\Database\Eloquent\Relations\hasMany
+    {
+        return $this->hasMany(MerchantWalletAdrress::class, 'merchant_id', 'id')->where('status', 'unassigned');
+    }
     
     public function merchantEmailContent(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {

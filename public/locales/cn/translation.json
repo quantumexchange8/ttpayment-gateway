@@ -13,5 +13,6 @@
     "Failed to fetch TRC-20 hash": "无法获取 TRC-20 哈希",
     "Invalid or incomplete TRC-20 transaction": "TRC-20 交易无效或不完整",
     "Transaction updated successfully.": "交易成功",
-    "Invalid to wallet": "对钱包无效"
+    "Invalid to wallet": "对钱包无效",
+    "server_busy": "数字货币转账系统繁忙中, 请稍后返回刷新存款页面再尝试入金"
 }
