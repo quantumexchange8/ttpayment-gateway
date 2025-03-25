@@ -636,7 +636,7 @@ class TransactionController extends Controller
 
                         $transfer_amount = $transactionData['value'] / 1000000 ; // 100
 
-                        if ($inputAmount === $transfer_amount) {
+                        if ($inputAmount == $transfer_amount) {
                             $transaction->update([
                                 'txID' => $transactionData['transaction_id'],
                                 'block_time' => $transactionData['block_timestamp'],
