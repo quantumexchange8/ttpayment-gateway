@@ -56,9 +56,8 @@ class CheckExpiredDeposit extends Command
                 $findWallet = WalletAddress::where('token_address', $pending->to_wallet)->first();
                 $findWalletAddress = MerchantWalletAdrress::where('merchant_id', $pending->merchant_id)->where('wallet_address_id', $findWallet->id)->first();
 
-                $findWalletAddress->update([
-                    'status' => 'unassigned',
-                ]);
+                $findWalletAddress->status = 'unassigned';
+                $findWalletAddress->save();
 
                 $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
                 $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);
