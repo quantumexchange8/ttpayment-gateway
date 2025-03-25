@@ -96,26 +96,44 @@ class CheckDepositStatus extends Command
 
         Log::debug('transaction', ['response receive' => $transactionInfo]);
 
-        foreach ($transactionInfo['data'] as $transaction) {
+        if ($merchant->deposit_type === "2") {
+            foreach ($transactionInfo['data'] as $transaction) {
 
-            $apiAmount = $transaction['value'] / 1000000; // 转换为实际金额
+                $apiAmount = $transaction['value'] / 1000000; // 转换为实际金额
 
-            // 检查金额是否在允许的范围内
-            $startRange = $pending->amount - $payoutSetting->diff_amount;
-            $endRange = $pending->amount + $payoutSetting->diff_amount;
+                if ($apiAmount == $pending->amount) {
+                    $this->updateTransaction($pending, $transaction, $merchant, $merchantWallet, $payoutSetting, 'trc-20');
+                    break;
+                } else {
+                    Log::debug('Type 2: Skipping transaction due to amount mismatch', [
+                        'pending_amount' => $pending->amount,
+                        'api_amount' => $apiAmount,
+                    ]);
+                }
+            }
+        } else {
+            foreach ($transactionInfo['data'] as $transaction) {
 
-            if ($apiAmount >= $startRange && $apiAmount <= $endRange) {
-
-                // 如果金额匹配，则更新交易
-                $this->updateTransaction($pending, $transaction, $merchant, $merchantWallet, $payoutSetting, 'trc-20');
-                break;
-            } else {
-                Log::debug('Skipping transaction due to amount mismatch', [
-                    'pending_amount' => $pending->amount,
-                    'api_amount' => $apiAmount,
-                ]);
+                $apiAmount = $transaction['value'] / 1000000; // 转换为实际金额
+    
+                // 检查金额是否在允许的范围内
+                $startRange = $pending->amount - $payoutSetting->diff_amount;
+                $endRange = $pending->amount + $payoutSetting->diff_amount;
+    
+                if ($apiAmount >= $startRange && $apiAmount <= $endRange) {
+    
+                    // 如果金额匹配，则更新交易
+                    $this->updateTransaction($pending, $transaction, $merchant, $merchantWallet, $payoutSetting, 'trc-20');
+                    break;
+                } else {
+                    Log::debug('Skipping transaction due to amount mismatch', [
+                        'pending_amount' => $pending->amount,
+                        'api_amount' => $apiAmount,
+                    ]);
+                }
             }
         }
+        
     }
 
     protected function processBep20Payment(Transaction $pending, Merchant $merchant, MerchantWallet $merchantWallet, PayoutConfig $payoutSetting)

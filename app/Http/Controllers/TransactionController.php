@@ -343,7 +343,7 @@ class TransactionController extends Controller
                             'amount' => $amount,
                             'expirationTime' => $transaction->expired_at,
                             'transaction' => $transaction,
-                            'tokenAddress' => $tokenAddress,
+                            'tokenAddress' => $to_wallet,
                             'storedToken' => $storedToken,
                             'lang' => $lang,
                             'referer' => $referer,
