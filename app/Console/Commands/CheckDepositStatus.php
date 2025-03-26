@@ -78,42 +78,52 @@ class CheckDepositStatus extends Command
 
     protected function processTrc20Payment(Transaction $pending, Merchant $merchant, MerchantWallet $merchantWallet, PayoutConfig $payoutSetting)
     {
-        $response = Http::get('https://nile.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
-            'min_timestamp' => $pending->created_at->timestamp * 1000,
-            'only_to' => true,
-        ]);
+        if ($merchant->deposit_type === "2")  {
 
-        if (!$response->successful()) {
-            Log::error('Failed to fetch TRC-20 transactions', ['response' => $response->json()]);
-            return;
-        }
-
-        $transactionInfo = $response->json();
-        if (empty($transactionInfo['data'])) {
-            Log::debug('No TRC-20 transactions found');
-            return;
-        }
-
-        Log::debug('transaction', ['response receive' => $transactionInfo]);
-
-        if ($merchant->deposit_type === "2") {
-            foreach ($transactionInfo['data'] as $transaction) {
-
-                $apiAmount = $transaction['value'] / 1000000; // 转换为实际金额
-
-                if ($apiAmount == $pending->amount) {
-                    $this->updateTransaction($pending, $transaction, $merchant, $merchantWallet, $payoutSetting, 'trc-20');
-                    break;
-                } else {
-                    Log::debug('Type 2: Skipping transaction due to amount mismatch', [
-                        'pending_amount' => $pending->amount,
-                        'api_amount' => $apiAmount,
-                    ]);
-                }
+            $response = Http::withHeaders(['TRON-PRO-API-KEY' => $payoutSetting->api_key])->get('https://nile.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
+                'min_timestamp' => $pending->created_at->timestamp * 1000,
+                'only_to' => true,
+            ]);
+    
+            if (!$response->successful()) {
+                Log::error('Failed to fetch TRC-20 transactions', ['response' => $response->json()]);
+                return;
             }
-        } else {
+    
+            $transactionInfo = $response->json();
+            if (empty($transactionInfo['data'])) {
+                Log::debug('No TRC-20 transactions found');
+                return;
+            }
+    
+            Log::debug('transaction', ['response receive' => $transactionInfo]);
+
             foreach ($transactionInfo['data'] as $transaction) {
 
+                $this->updateTransaction($pending, $transaction, $merchant, $merchantWallet, $payoutSetting, 'trc-20');
+            }
+
+        } else {
+            $response = Http::withHeaders(['TRON-PRO-API-KEY' => $payoutSetting->api_key])->get('https://nile.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
+                'min_timestamp' => $pending->created_at->timestamp * 1000,
+                'only_to' => true,
+            ]);
+    
+            if (!$response->successful()) {
+                Log::error('Failed to fetch TRC-20 transactions', ['response' => $response->json()]);
+                return;
+            }
+    
+            $transactionInfo = $response->json();
+            if (empty($transactionInfo['data'])) {
+                Log::debug('No TRC-20 transactions found');
+                return;
+            }
+
+            Log::debug('transaction', ['response receive' => $transactionInfo]);
+
+            foreach ($transactionInfo['data'] as $transaction) {
+    
                 $apiAmount = $transaction['value'] / 1000000; // 转换为实际金额
     
                 // 检查金额是否在允许的范围内
@@ -133,7 +143,6 @@ class CheckDepositStatus extends Command
                 }
             }
         }
-        
     }
 
     protected function processBep20Payment(Transaction $pending, Merchant $merchant, MerchantWallet $merchantWallet, PayoutConfig $payoutSetting)
