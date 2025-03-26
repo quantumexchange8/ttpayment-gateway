@@ -80,14 +80,14 @@ class CheckDepositStatus extends Command
     {
         if ($merchant->deposit_type === "2")  {
 
-            // $response = Http::withHeaders(['TRON-PRO-API-KEY' => $payoutSetting->api_key])->get('https://nile.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
-            //     'min_timestamp' => $pending->created_at->timestamp * 1000,
-            //     'only_to' => true,
-            // ]);
-            $response = Http::get('https://nile.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
+            $response = Http::withHeaders(['TRON-PRO-API-KEY' => $payoutSetting->api_key])->get('https://nile.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
                 'min_timestamp' => $pending->created_at->timestamp * 1000,
                 'only_to' => true,
             ]);
+            // $response = Http::get('https://nile.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
+            //     'min_timestamp' => $pending->created_at->timestamp * 1000,
+            //     'only_to' => true,
+            // ]);
     
             if (!$response->successful()) {
                 Log::error('Failed to fetch TRC-20 transactions', ['response' => $response->json()]);
@@ -108,14 +108,14 @@ class CheckDepositStatus extends Command
             }
 
         } else {
-            // $response = Http::withHeaders(['TRON-PRO-API-KEY' => $payoutSetting->api_key])->get('https://nile.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
-            //     'min_timestamp' => $pending->created_at->timestamp * 1000,
-            //     'only_to' => true,
-            // ]);
-            $response = Http::get('https://nile.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
+            $response = Http::withHeaders(['TRON-PRO-API-KEY' => $payoutSetting->api_key])->get('https://nile.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
                 'min_timestamp' => $pending->created_at->timestamp * 1000,
                 'only_to' => true,
             ]);
+            // $response = Http::get('https://nile.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
+            //     'min_timestamp' => $pending->created_at->timestamp * 1000,
+            //     'only_to' => true,
+            // ]);
     
             if (!$response->successful()) {
                 Log::error('Failed to fetch TRC-20 transactions', ['response' => $response->json()]);
