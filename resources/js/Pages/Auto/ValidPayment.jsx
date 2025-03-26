@@ -11,7 +11,7 @@ import { CopyIcon } from "@/Components/Brand";
 import Tooltip from "@/Components/Tooltip";
 import { formatAmount } from "@/Composables";
 
-export default function Payment({ merchant, transaction, expirationTime, tokenAddress, storedToken, lang, referer, amount }) {
+export default function Payment({ merchant, transaction, expirationTime, tokenAddress, storedToken, lang, referer, amount, apikey }) {
     
     const getRandomIndex = () => Math.floor(Math.random() * merchant.merchant_wallet_address.length);
     
@@ -70,7 +70,12 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
     useEffect(() => {
         const fetchBlock = async () => {
             try {
-                const response = await fetch('https://api.trongrid.io/walletsolidity/getnowblock');
+                const response = await fetch('https://api.trongrid.io/walletsolidity/getnowblock', {
+                    method: 'GET',
+                    headers: {
+                        'TRON-PRO-API-KEY': apikey
+                    }
+                });
                 // const response = await fetch('https://nile.trongrid.io/walletsolidity/getnowblock');
                 const result = await response.json();
                 const timestamp = result.block_header.raw_data.timestamp;
@@ -90,7 +95,12 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
             try {
                 const url = `https://api.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
                 // const url = `https://nile.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
-                const response = await fetch(url);
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'TRON-PRO-API-KEY': apikey
+                    }
+                });
                 const result = await response.json();
                 console.log(result);
                 if ((result.data != null) && (result.data.length === 1)) {

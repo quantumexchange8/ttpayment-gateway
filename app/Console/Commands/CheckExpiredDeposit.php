@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Models\MerchantWalletAdrress;
 use App\Models\PayoutConfig;
 use App\Models\Transaction;
+use App\Models\WalletAddress;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -50,6 +52,12 @@ class CheckExpiredDeposit extends Command
                 $pending->update([
                     'status' => 'fail',
                 ]);
+
+                $findWallet = WalletAddress::where('token_address', $pending->to_wallet)->first();
+                $findWalletAddress = MerchantWalletAdrress::where('merchant_id', $pending->merchant_id)->where('wallet_address_id', $findWallet->id)->first();
+
+                $findWalletAddress->status = 'unassigned';
+                $findWalletAddress->save();
 
                 $payoutSetting = PayoutConfig::where('merchant_id', $pending->merchant_id)->where('live_paymentUrl', $pending->origin_domain)->first();
                 $vCode = md5($pending->transaction_number . $payoutSetting->appId . $payoutSetting->merchant_id);

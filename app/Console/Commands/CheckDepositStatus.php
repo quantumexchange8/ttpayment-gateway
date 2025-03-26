@@ -4,9 +4,11 @@ namespace App\Console\Commands;
 
 use App\Models\Merchant;
 use App\Models\MerchantWallet;
+use App\Models\MerchantWalletAdrress;
 use App\Models\PayoutConfig;
 use App\Models\RateProfile;
 use App\Models\Transaction;
+use App\Models\WalletAddress;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
@@ -76,42 +78,77 @@ class CheckDepositStatus extends Command
 
     protected function processTrc20Payment(Transaction $pending, Merchant $merchant, MerchantWallet $merchantWallet, PayoutConfig $payoutSetting)
     {
-        $response = Http::get('https://api.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
-            'min_timestamp' => $pending->created_at->timestamp * 1000,
-            'only_to' => true,
-        ]);
+        if ($merchant->deposit_type === "2")  {
 
-        if (!$response->successful()) {
-            Log::error('Failed to fetch TRC-20 transactions', ['response' => $response->json()]);
-            return;
-        }
+            $response = Http::withHeaders(['TRON-PRO-API-KEY' => $payoutSetting->api_key])->get('https://api.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
+                'min_timestamp' => $pending->created_at->timestamp * 1000,
+                'only_to' => true,
+            ]);
+            // $response = Http::get('https://api.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
+            //     'min_timestamp' => $pending->created_at->timestamp * 1000,
+            //     'only_to' => true,
+            // ]);
+    
+            if (!$response->successful()) {
+                Log::error('Failed to fetch TRC-20 transactions', ['response' => $response->json()]);
+                return;
+            }
+    
+            $transactionInfo = $response->json();
+            if (empty($transactionInfo['data'])) {
+                Log::debug('No TRC-20 transactions found');
+                return;
+            }
+    
+            Log::debug('transaction', ['response receive' => $transactionInfo]);
 
-        $transactionInfo = $response->json();
-        if (empty($transactionInfo['data'])) {
-            Log::debug('No TRC-20 transactions found');
-            return;
-        }
+            foreach ($transactionInfo['data'] as $transaction) {
 
-        Log::debug('transaction', ['response receive' => $transactionInfo]);
-
-        foreach ($transactionInfo['data'] as $transaction) {
-
-            $apiAmount = $transaction['value'] / 1000000; // 转换为实际金额
-
-            // 检查金额是否在允许的范围内
-            $startRange = $pending->amount - $payoutSetting->diff_amount;
-            $endRange = $pending->amount + $payoutSetting->diff_amount;
-
-            if ($apiAmount >= $startRange && $apiAmount <= $endRange) {
-
-                // 如果金额匹配，则更新交易
                 $this->updateTransaction($pending, $transaction, $merchant, $merchantWallet, $payoutSetting, 'trc-20');
-                break;
-            } else {
-                Log::debug('Skipping transaction due to amount mismatch', [
-                    'pending_amount' => $pending->amount,
-                    'api_amount' => $apiAmount,
-                ]);
+            }
+
+        } else {
+            $response = Http::withHeaders(['TRON-PRO-API-KEY' => $payoutSetting->api_key])->get('https://api.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
+                'min_timestamp' => $pending->created_at->timestamp * 1000,
+                'only_to' => true,
+            ]);
+            // $response = Http::get('https://api.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
+            //     'min_timestamp' => $pending->created_at->timestamp * 1000,
+            //     'only_to' => true,
+            // ]);
+    
+            if (!$response->successful()) {
+                Log::error('Failed to fetch TRC-20 transactions', ['response' => $response->json()]);
+                return;
+            }
+    
+            $transactionInfo = $response->json();
+            if (empty($transactionInfo['data'])) {
+                Log::debug('No TRC-20 transactions found');
+                return;
+            }
+
+            Log::debug('transaction', ['response receive' => $transactionInfo]);
+
+            foreach ($transactionInfo['data'] as $transaction) {
+    
+                $apiAmount = $transaction['value'] / 1000000; // 转换为实际金额
+    
+                // 检查金额是否在允许的范围内
+                $startRange = $pending->amount - $payoutSetting->diff_amount;
+                $endRange = $pending->amount + $payoutSetting->diff_amount;
+    
+                if ($apiAmount >= $startRange && $apiAmount <= $endRange) {
+    
+                    // 如果金额匹配，则更新交易
+                    $this->updateTransaction($pending, $transaction, $merchant, $merchantWallet, $payoutSetting, 'trc-20');
+                    break;
+                } else {
+                    Log::debug('Skipping transaction due to amount mismatch', [
+                        'pending_amount' => $pending->amount,
+                        'api_amount' => $apiAmount,
+                    ]);
+                }
             }
         }
     }
@@ -193,6 +230,9 @@ class CheckDepositStatus extends Command
             return;
         }
 
+        $findWallet = WalletAddress::where('token_address', $pending->to_wallet)->first();
+        $findWalletAddress = MerchantWalletAdrress::where('merchant_id', $pending->merchant_id)->where('wallet_address_id', $findWallet->id)->first();
+
         $txnAmount = $paymentType === 'trc-20' ? $transaction['value'] / 1000000 : $transaction['value'] / 1000000000000000000;
         $timestamp = $paymentType === 'trc-20' ? $transaction['block_timestamp'] / 1000 : $transaction['timeStamp'];
         $transactionDate = Carbon::createFromTimestamp($timestamp)->setTimezone('GMT+8');
@@ -205,7 +245,11 @@ class CheckDepositStatus extends Command
         $endRange = $pending->amount + $payoutSetting->diff_amount;
         $apiAmount = $paymentType === 'trc-20' ? $transaction['value'] / 1000000 : $transaction['value'] / 1000000000000000000;
 
-        $transferStatus = ($apiAmount >= $startRange && $apiAmount <= $endRange) ? 'valid' : 'invalid';
+        if ($merchant->deposit_type === "2") {
+            $transferStatus = ($apiAmount == $pending->amount) ? 'valid' : 'invalid';
+        } else {
+            $transferStatus = ($apiAmount >= $startRange && $apiAmount <= $endRange) ? 'valid' : 'invalid';
+        }
 
         $pending->update([
             'from_wallet' => $transaction['from'],
@@ -221,6 +265,9 @@ class CheckDepositStatus extends Command
             'txreceipt_status' => $transaction['txreceipt_status'] ?? null,
             'token_symbol' => $transaction['token_info']['symbol'] ?? $transaction['tokenSymbol'] ?? null,
         ]);
+
+        $findWalletAddress->status = 'unassigned';
+        $findWalletAddress->save();
 
         if ($pending->transaction_type === 'deposit') {
             $merchantWallet->gross_deposit += $txnAmount;
