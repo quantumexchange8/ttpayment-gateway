@@ -636,7 +636,9 @@ class TransactionController extends Controller
 
                         $transfer_amount = $transactionData['value'] / 1000000 ; // 100
 
-                        if ($inputAmount == $transfer_amount) {
+                        $formattedApiAmount = floor($transfer_amount * 100) / 100;
+
+                        if ($inputAmount == $formattedApiAmount) {
                             $transaction->update([
                                 'txID' => $transactionData['transaction_id'],
                                 'block_time' => $transactionData['block_timestamp'],
@@ -647,7 +649,8 @@ class TransactionController extends Controller
                                 'total_amount' => $amount - $fee,
                                 'status' => 'success',
                                 'transfer_status' => 'valid',
-                                'transaction_date' => $nowDateTime
+                                'transaction_date' => $nowDateTime,
+                                'token_symbol' => $symbol,
                             ]);
                         } else {
                             $transaction->update([
@@ -660,7 +663,8 @@ class TransactionController extends Controller
                                 'total_amount' => $amount - $fee,
                                 'status' => 'success',
                                 'transfer_status' => 'invalid',
-                                'transaction_date' => $nowDateTime
+                                'transaction_date' => $nowDateTime,
+                                'token_symbol' => $symbol,
                             ]);
                         }
 
