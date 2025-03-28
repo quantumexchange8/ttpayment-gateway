@@ -1,11 +1,21 @@
 import { SuccessIcon } from "@/Components/Brand";
 import Button from "@/Components/Button";
 import { useForm } from "@inertiajs/react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next';
 
-export default function ReturnPayment({ datas, total_amount, transaction, storedToken, merchant_id, referer }) {
+export default function ReturnPayment({ datas, total_amount, transaction, storedToken, merchant_id, referer, lang }) {
     
     const [isLoading, setIsLoading] = useState(false);
+    const { t, i18n } = useTranslation();
+
+    useEffect(() => {
+        if (lang === 'en' || lang === 'cn' || lang === 'tw') {
+            i18n.changeLanguage(lang);
+        } else {
+            i18n.changeLanguage('en');
+        }
+    }, [lang, i18n]);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         transaction: transaction,
@@ -32,17 +42,17 @@ export default function ReturnPayment({ datas, total_amount, transaction, stored
                     <SuccessIcon/>
                     <div className="flex flex-col items-center">
                         <div className=" text-lg font-semibold text-gray-950">
-                            Success!
+                            {t('success')}!
                         </div>
                         <div className="text-gray-500 text-sm">
-                            Your deposit is now being processed.
+                            {t('deposit_success')}.
                         </div>
                     </div>
                 </div>
                 <form onSubmit={submit} >
                     <Button type="submit" size="sm" variant="success" className="w-full flex justify-center" disabled={processing}>
                         <span className="text-sm font-semibold">
-                            Return
+                            {t('return')}
                         </span>
                     </Button>
                 </form>

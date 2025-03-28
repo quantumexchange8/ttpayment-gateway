@@ -14,5 +14,8 @@
     "Invalid or incomplete TRC-20 transaction": "Invalid or incomplete TRC-20 transaction",
     "Transaction updated successfully.": "Transaction updated successfully.",
     "Invalid to wallet": "Invalid to wallet",
-    "server_busy": "The cryptocurrency transfer system is currently busy. Please return later, refresh the deposit page, and try again."
+    "server_busy": "The cryptocurrency transfer system is currently busy. Please return later, refresh the deposit page, and try again.",
+    "success": "Success",
+    "deposit_success": "Your deposit is now being processed",
+    "return": "Return"
 }
