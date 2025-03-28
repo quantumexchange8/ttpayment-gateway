@@ -48,7 +48,7 @@ export default function Processing({ lang, referer, merchant_id }) {
             </div>
 
             <div>
-                <Button size="sm" variant="black" onClick={returnBack}>
+                <Button size="sm" variant="success" onClick={returnBack} disabled={processing}>
                     {t('return')}
                 </Button>
             </div>
