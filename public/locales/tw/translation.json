@@ -14,5 +14,8 @@
     "Invalid or incomplete TRC-20 transaction": "TRC-20 交易無效或不完整",
     "Transaction updated successfully.": "交易成功",
     "Invalid to wallet": "對錢包無效",
-    "server_busy": "数字货币转账系统繁忙中, 请稍后返回刷新存款页面再尝试入金"
+    "server_busy": "数字货币转账系统繁忙中, 请稍后返回刷新存款页面再尝试入金",
+    "success": "成功",
+    "deposit_success": "您的交易存款已成功",
+    "return": "返回"
 }

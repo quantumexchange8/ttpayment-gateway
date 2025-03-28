@@ -246,7 +246,6 @@ class CheckDepositStatus extends Command
         $apiAmount = $paymentType === 'trc-20' ? $transaction['value'] / 1000000 : $transaction['value'] / 1000000000000000000;
 
         if ($merchant->deposit_type === "2") {
-
             $formattedApiAmount = floor($apiAmount * 100) / 100;
 
             $transferStatus = ($formattedApiAmount == $pending->amount) ? 'valid' : 'invalid';

@@ -74,6 +74,17 @@ class TransactionController extends Controller
             $checkOrderNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->first();
             $paymentMethod = PayoutConfig::where('merchant_id', $merchantId)->where('live_paymentUrl', $referer)->first();
 
+            // check transaction number is success in payment
+            $findSuccessOrderNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->where('status', 'success')->first();
+
+            if ($findSuccessOrderNo) {
+                return Inertia::render('Processing', [
+                    'lang' => $lang,
+                    'referer' => $referer,
+                    'merchant_id' => $merchantId,
+                ]);
+            }
+
             // if transaction exist return to it
             if ($findTxnNo) {
 
@@ -896,6 +907,7 @@ class TransactionController extends Controller
         $transactionDetails = Transaction::find($transaction);
         $merchant = Merchant::where('id', $transactionDetails->merchant_id)->with(['merchantWalletAddress.walletAddress', 'merchantEmail'])->first();
         $referer = $request->referer;
+        $lang = $request->lang;
 
         // $arrEmails = [];
         // foreach ($merchant->merchantEmail as $emails) {
@@ -916,6 +928,7 @@ class TransactionController extends Controller
             'storedToken' => $storedToken,
             'merchant_id' => $transactionDetails->merchant_id,
             'referer' => $referer,
+            'lang' => $lang,
         ]);
     }
 

@@ -115,7 +115,7 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
                         post('/updateTransaction', {
                             preserveScroll: true,
                             onSuccess: () => {
-                                window.location.href = `/returnTransaction?transaction_id=${transaction.id}&token=${storedToken}&merchant_id=${merchant.id}&referer=${referer}`;
+                                window.location.href = `/returnTransaction?transaction_id=${transaction.id}&token=${storedToken}&merchant_id=${merchant.id}&referer=${referer}&lang=${lang}`;
                             }
                         });
                         clearInterval(pollingInterval);
