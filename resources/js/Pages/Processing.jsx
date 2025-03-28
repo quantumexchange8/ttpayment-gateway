@@ -49,7 +49,7 @@ export default function Processing({ lang, referer, merchant_id }) {
 
             <div>
                 <Button size="sm" variant="black" onClick={returnBack}>
-                    Return
+                    {t('return')}
                 </Button>
             </div>
         </div>
