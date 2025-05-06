@@ -93,8 +93,8 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
         // let pollingInterval;
         const fetchTransactions = async () => {
             try {
-                const url = `https://api.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
-                // const url = `https://nile.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}`;
+                const url = `https://api.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}&only_to=true`;
+                // const url = `https://nile.trongrid.io/v1/accounts/${tokenAddress}/transactions/trc20?order_by=block_timestamp,desc&min_timestamp=${blockTimestamp}&only_to=true`;
                 const response = await fetch(url, {
                     method: 'GET',
                     headers: {
