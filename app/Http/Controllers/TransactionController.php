@@ -50,7 +50,6 @@ class TransactionController extends Controller
         $merchantClientName = $request->query('userName'); // Merchant client user id
         $merchantClientEmail = $request->query('userEmail'); // Merchant client user id
         $vCode = $request->query('vCode'); // Merchant client user id
-        $tt_txn = RunningNumberService::getID('transaction');
         $verifyToken = $request->query('token');
         $appId = PayoutConfig::where('merchant_id', $merchantId)->first();
         $lang = $request->query('locale'); // Language ? yes : default en
@@ -82,6 +81,7 @@ class TransactionController extends Controller
                     'lang' => $lang,
                     'referer' => $referer,
                     'merchant_id' => $merchantId,
+                    'transaction' => $findSuccessOrderNo,
                 ]);
             }
 
@@ -1040,7 +1040,7 @@ class TransactionController extends Controller
     public function returnCRM(Request $request)
     {
 
-        $payout = PayoutConfig::where('merchant_id', $request->merchant_id)->where('live_paymentUrl', $request->referer)->first();
+        $payout = PayoutConfig::where('merchant_id', $request->merchant_id)->where('live_paymentUrl', $request->transaction['origin_domain'])->first();
         $redirectUrl = $payout->live_paymentUrl . $payout->returnUrl;
 
         return Inertia::location($redirectUrl);

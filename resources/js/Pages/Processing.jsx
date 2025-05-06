@@ -4,7 +4,7 @@ import { useForm } from "@inertiajs/react";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from 'react-i18next';
 
-export default function Processing({ lang, referer, merchant_id }) {
+export default function Processing({ lang, referer, merchant_id, transaction }) {
 
     const { t, i18n } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
@@ -20,6 +20,7 @@ export default function Processing({ lang, referer, merchant_id }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         referer: referer,
         merchant_id: merchant_id,
+        transaction: transaction,
     });
 
     const returnBack = (e) => {
