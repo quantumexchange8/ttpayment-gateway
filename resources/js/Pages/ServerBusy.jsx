@@ -24,7 +24,7 @@ export default function ServerBusy({ lang, referer, merchant_id }) {
     const returnBack = (e) => {
         e.preventDefault();
         setIsLoading(true);
-        post('/return-crm', {
+        post('/return-crm2', {
             preserveScroll: true,
             onSuccess: () => {
                 setIsLoading(false);

@@ -1170,4 +1170,13 @@ class TransactionController extends Controller
 
         return Inertia::location($redirectUrl);
     }
+
+    public function returnCRM2(Request $request)
+    {
+
+        $payout = PayoutConfig::where('merchant_id', $request->merchant_id)->where('live_paymentUrl', $request->referer)->first();
+        $redirectUrl = $payout->live_paymentUrl . $payout->returnUrl;
+
+        return Inertia::location($redirectUrl);
+    }
 }
