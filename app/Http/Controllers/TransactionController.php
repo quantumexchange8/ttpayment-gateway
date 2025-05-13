@@ -275,7 +275,7 @@ class TransactionController extends Controller
                             'apikey' => $paymentMethod->api_key,
                         ]);
                     }
-                } else if ($merchant->deposit_type == "2") {
+                } else if ($merchant->deposit_type == "2" || $merchant->deposit_type == "3") {
                     $storedToken = $request->session()->get('session_token');
 
                     $merchantWallet = Merchant::where('id', $merchantId)->with(['assignedWalletAddress.walletAddress'])->first();
@@ -655,6 +655,131 @@ class TransactionController extends Controller
                                 'block_time' => $transactionData['block_timestamp'],
                                 'from_wallet' => $transactionData['from'],
                                 'to_wallet' => $transactionData['to'],
+                                'txn_amount' => $amount,
+                                'fee' => $fee,
+                                'total_amount' => $amount - $fee,
+                                'status' => 'success',
+                                'transfer_status' => 'valid',
+                                'transaction_date' => $nowDateTime,
+                                'token_symbol' => $symbol,
+                            ]);
+                        } else {
+                            $transaction->update([
+                                'txID' => $transactionData['transaction_id'],
+                                'block_time' => $transactionData['block_timestamp'],
+                                'from_wallet' => $transactionData['from'],
+                                'to_wallet' => $transactionData['to'],
+                                'txn_amount' => $amount,
+                                'fee' => $fee,
+                                'total_amount' => $amount - $fee,
+                                'status' => 'success',
+                                'transfer_status' => 'invalid',
+                                'transaction_date' => $nowDateTime,
+                                'token_symbol' => $symbol,
+                            ]);
+                        }
+
+                        $findWalletAddress->status = 'unassigned';
+                        $findWalletAddress->save();
+
+                        $merchantWallet = MerchantWallet::where('merchant_id', $request->merchantId)->first();
+            
+                        // wallet
+                        $merchantWallet->gross_deposit += $transaction->txn_amount; //gross amount 
+                        $gross_fee = (($merchantWallet->gross_deposit * $merchantRateProfile->withdrawal_fee) / 100);
+                        $merchantWallet->total_fee += $gross_fee; // total fee
+                        $merchantWallet->net_deposit = $merchantWallet->gross_deposit - $gross_fee; // net amount
+                        $merchantWallet->total_deposit += $transaction->txn_amount;
+                        $merchantWallet->save();
+
+                        // callback here
+                        $payoutSetting = PayoutConfig::where('merchant_id', $merchant->id)->where('live_paymentUrl', $request->referer)->first();
+
+                        $vCode = md5($transaction->transaction_number . $paymentMethod->appId . $merchant->id);
+
+                        $params = [
+                            'merchant_id' => $transaction->merchant_id,
+                            'client_id' => $transaction->client_id,
+                            'transaction_type' => $transaction->transaction_type,
+                            'from_wallet' => $transaction->from_wallet,
+                            'to_wallet' => $transaction->to_wallet,
+                            'txID' => $transaction->txID,
+                            'block_time' => $transaction->block_time,
+                            'transfer_amount' => $transaction->txn_amount,
+                            'input_amount' => $inputAmount,
+                            'transaction_number' => $transaction->transaction_number,
+                            'status' => $transaction->status,
+                            'transfer_amount_type' => $transaction->transfer_status,
+                            'payment_method' => $transaction->payment_method,
+                            'created_at' => $transaction->created_at,
+                            'description' => $transaction->description,
+                            'vCode' => $vCode,
+                            // 'token' => $token,
+                        ];
+
+                        $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
+                        $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
+
+                        $response = Http::post($callBackUrl, $params);
+
+                        Log::debug('response', ['response' => $response]);
+
+                    } else {
+                        $transaction->update([
+                            'txID' => $transactionData['transaction_id'],
+                            'block_time' => $transactionData['block_timestamp'],
+                            'from_wallet' => $transactionData['from'],
+                            'to_wallet' => $transactionData['to'],
+                            'txn_amount' => $amount,
+                            'fee' => $fee,
+                            'total_amount' => $amount - $fee,
+                            'status' => 'fail',
+                            'transaction_date' => $nowDateTime,
+                            'description' => 'unknown symbol',
+                        ]);
+                    }
+
+                } else {
+                    Log::debug('txID repeated');
+                }
+
+                return redirect()->route('returnTransaction', ['transaction_id' => $transaction->id]);
+            }
+
+        } else if ($merchant->deposit_type == "3") {
+            
+            if ($paymentMethod->payment_method === 'trc-20') {
+                $transactionData = $request->latestTransaction;
+                $transaction = Transaction::find($request->transaction);
+                $nowDateTime = Carbon::now();
+                $amount = $transactionData['value'] / 1000000 ;
+                $inputAmount = $transaction->amount;
+                Log::debug('get value', $transactionData);
+
+                $check = Transaction::where('txID', $transactionData['transaction_id'])->first();
+                $merchantRateProfile = RateProfile::find($merchant->rate_id);
+                $fee = (($amount * $merchantRateProfile->deposit_fee) / 100);
+                $symbol = $transactionData['token_info']['symbol'];
+
+                $findWallet = WalletAddress::where('token_address', $transaction->to_wallet)->first();
+                $findWalletAddress = MerchantWalletAdrress::where('merchant_id', $transaction->merchant_id)->where('wallet_address_id', $findWallet->id)->first();
+
+                if (empty($check)) {
+
+                    if ($symbol === "USDT") {
+
+                        $transfer_amount = $transactionData['value'] / 1000000 ; // 100
+                        $start_range = $transfer_amount - $paymentMethod->diff_amount; //85
+                        $end_range = $transfer_amount + $paymentMethod->diff_amount; // 115
+
+                        
+
+                        if ($inputAmount >= $start_range && $inputAmount <= $end_range) {
+                            $transaction->update([
+                                'txID' => $transactionData['transaction_id'],
+                                'block_time' => $transactionData['block_timestamp'],
+                                'from_wallet' => $transactionData['from'],
+                                // 'to_wallet' => $transactionData['to'],
                                 'txn_amount' => $amount,
                                 'fee' => $fee,
                                 'total_amount' => $amount - $fee,

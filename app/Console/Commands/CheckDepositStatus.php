@@ -78,7 +78,7 @@ class CheckDepositStatus extends Command
 
     protected function processTrc20Payment(Transaction $pending, Merchant $merchant, MerchantWallet $merchantWallet, PayoutConfig $payoutSetting)
     {
-        if ($merchant->deposit_type === "2")  {
+        if ($merchant->deposit_type === "2" || $merchant->deposit_type === "3")  {
 
             $response = Http::withHeaders(['TRON-PRO-API-KEY' => $payoutSetting->api_key])->get('https://api.trongrid.io/v1/accounts/' . $pending->to_wallet . '/transactions/trc20', [
                 'min_timestamp' => $pending->created_at->timestamp * 1000,
