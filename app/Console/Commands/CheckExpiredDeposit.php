@@ -75,7 +75,6 @@ class CheckExpiredDeposit extends Command
                     'transfer_amount' => $pending->txn_amount,
                     'amount' => $pending->amount,
                     'transaction_number' => $pending->transaction_number,
-                    'amount' => $pending->amount,
                     'status' => $pending->status,
                     'transfer_amount_type' => $pending->transfer_status,
                     'payment_method' => $pending->payment_method,
@@ -86,7 +85,7 @@ class CheckExpiredDeposit extends Command
                     'token' => $token,
                 ];
 
-                $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
+                $callBackUrl = $payoutSetting->callBackUrl;
                 $response = Http::post($callBackUrl, $params);
 
                 Log::debug('deposit expired', [

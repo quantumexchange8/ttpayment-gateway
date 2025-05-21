@@ -71,7 +71,6 @@ class TransactionController extends Controller
             // check transaction number for both crm and gateway exist or not
             $findTxnNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->where('status', 'pending')->first();
             $checkOrderNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->first();
-            $paymentMethod = PayoutConfig::where('merchant_id', $merchantId)->where('live_paymentUrl', $referer)->first();
 
             // check transaction number is success in payment
             $findSuccessOrderNo = Transaction::where('merchant_id', $merchantId)->where('transaction_number', $transactionNo)->where('status', 'success')->first();
@@ -87,6 +86,8 @@ class TransactionController extends Controller
 
             // if transaction exist return to it
             if ($findTxnNo) {
+
+                $paymentMethod = PayoutConfig::where('merchant_id', $merchantId)->where('live_paymentUrl', $findTxnNo)->first();
 
                 if ($findTxnNo->payment_method === 'auto') {
                     if (Carbon::now() > $findTxnNo->expired_at) {
@@ -176,7 +177,8 @@ class TransactionController extends Controller
                 $merchant = Merchant::where('id', $merchantId)->with(['merchantWalletAddress.walletAddress'])->first();
                 $randomWalletAddress = $merchant->merchantWalletAddress->random();
                 $tokenAddress = $randomWalletAddress->walletAddress->token_address;
-
+                $paymentMethod = PayoutConfig::where('merchant_id', $merchantId)->where('live_paymentUrl', $referer)->first();
+                
                 $merchantClientId = $request->userId;
     
                 if($merchant->deposit_type == "0" ) {
@@ -478,7 +480,7 @@ class TransactionController extends Controller
                             ];
 
                             $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
-                            $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
+                            $callBackUrl = $payoutSetting->callBackUrl;
 
                             $response = Http::post($callBackUrl, $params);
 
@@ -614,8 +616,8 @@ class TransactionController extends Controller
                             // 'token' => $token,
                         ];
 
-                        $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
-                        $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
+                        $url = $payoutSetting->returnUrl;
+                        $callBackUrl = $payoutSetting->callBackUrl;
 
                         $response = Http::post($callBackUrl, $params);
                     }
@@ -718,7 +720,7 @@ class TransactionController extends Controller
                         ];
 
                         $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
-                        $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
+                        $callBackUrl = $payoutSetting->callBackUrl;
 
                         $response = Http::post($callBackUrl, $params);
 
@@ -843,7 +845,7 @@ class TransactionController extends Controller
                         ];
 
                         $url = $payoutSetting->live_paymentUrl . $payoutSetting->returnUrl;
-                        $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
+                        $callBackUrl = $payoutSetting->callBackUrl;
 
                         $response = Http::post($callBackUrl, $params);
 
@@ -1000,7 +1002,7 @@ class TransactionController extends Controller
                     'token' => $token,
                 ];
 
-                $callBackUrl = $payoutConfig->live_paymentUrl . $payoutConfig->callBackUrl;
+                $callBackUrl = $payoutConfig->callBackUrl;
                 $response = Http::post($callBackUrl, $params);
 
                 Log::info('Callback status', ['status' => $response->status()]);
@@ -1097,7 +1099,7 @@ class TransactionController extends Controller
 
         $request->session()->flush();
 
-        $url = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->returnUrl;
+        $url = $matchingPayoutSetting->returnUrl;
         $callBackUrl = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->callBackUrl;
         
         
@@ -1156,7 +1158,7 @@ class TransactionController extends Controller
         $payoutSetting = PayoutConfig::where('merchant_id', $transction->merchant_id)->get();
         $matchingPayoutSetting = $payoutSetting->firstWhere('live_paymentUrl', $referer);
 
-        $url = $matchingPayoutSetting->live_paymentUrl . $matchingPayoutSetting->returnUrl;
+        $url = $matchingPayoutSetting->returnUrl;
         $redirectUrl = $url . "?" .  http_build_query($params);
 
         return Inertia::location($redirectUrl);
@@ -1166,7 +1168,7 @@ class TransactionController extends Controller
     {
 
         $payout = PayoutConfig::where('merchant_id', $request->merchant_id)->where('live_paymentUrl', $request->transaction['origin_domain'])->first();
-        $redirectUrl = $payout->live_paymentUrl . $payout->returnUrl;
+        $redirectUrl = $payout->returnUrl;
 
         return Inertia::location($redirectUrl);
     }
@@ -1175,7 +1177,7 @@ class TransactionController extends Controller
     {
 
         $payout = PayoutConfig::where('merchant_id', $request->merchant_id)->where('live_paymentUrl', $request->referer)->first();
-        $redirectUrl = $payout->live_paymentUrl . $payout->returnUrl;
+        $redirectUrl = $payout->returnUrl;
 
         return Inertia::location($redirectUrl);
     }

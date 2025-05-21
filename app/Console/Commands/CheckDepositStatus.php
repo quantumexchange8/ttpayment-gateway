@@ -312,7 +312,7 @@ class CheckDepositStatus extends Command
             'token' => $token,
         ];
 
-        $callBackUrl = $payoutSetting->live_paymentUrl . $payoutSetting->callBackUrl;
+        $callBackUrl = $payoutSetting->callBackUrl;
         $response = Http::post($callBackUrl, $params);
 
         Log::debug('Callback response', ['status' => $response->status()]);
