@@ -58,7 +58,7 @@ class TransactionController extends Controller
             $request->session()->flush();
             return Inertia::render('Welcome');
 
-        } else if ($request->merchantId && $request->orderNumber && $request->userId && $request->vCode && $amount) {
+        } else if ($request->merchantId && $request->orderNumber && $request->vCode && $amount) {
 
             // Check vCode
             $validateVCode = md5($amount . $appId->appId . $transactionNo . $merchantId . $appId->secret_key);
