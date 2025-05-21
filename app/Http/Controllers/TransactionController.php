@@ -183,7 +183,7 @@ class TransactionController extends Controller
 
                     $transaction = Transaction::create([
                         'merchant_id' => $merchantId,
-                        'client_id' => $merchantClientId,
+                        'client_id' => $merchantClientId ?? null,
                         'client_name' => $merchantClientName,
                         'client_email' => $merchantClientEmail,
                         'transaction_type' => 'deposit',
@@ -217,7 +217,7 @@ class TransactionController extends Controller
                         $transaction = Transaction::create([
                             'merchant_id' => $merchantId,
                             'payment_type' => 'bep-20',
-                            'client_id' => $merchantClientId,
+                            'client_id' => $merchantClientId ?? null,
                             'client_name' => $merchantClientName,
                             'client_email' => $merchantClientEmail,
                             'transaction_type' => 'deposit',
@@ -249,7 +249,7 @@ class TransactionController extends Controller
                         $transaction = Transaction::create([
                             'merchant_id' => $merchantId,
                             'payment_type' => 'trc-20',
-                            'client_id' => $merchantClientId,
+                            'client_id' => $merchantClientId ?? null,
                             'client_name' => $merchantClientName,
                             'client_email' => $merchantClientEmail,
                             'transaction_type' => 'deposit',
@@ -335,7 +335,7 @@ class TransactionController extends Controller
                         $transaction = Transaction::create([
                             'merchant_id' => $merchantId,
                             'payment_type' => 'trc-20',
-                            'client_id' => $merchantClientId,
+                            'client_id' => $merchantClientId ?? null,
                             'client_name' => $merchantClientName,
                             'client_email' => $merchantClientEmail,
                             'transaction_type' => 'deposit',
