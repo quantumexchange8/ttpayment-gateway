@@ -87,7 +87,7 @@ class TransactionController extends Controller
             // if transaction exist return to it
             if ($findTxnNo) {
 
-                $paymentMethod = PayoutConfig::where('merchant_id', $merchantId)->where('live_paymentUrl', $findTxnNo)->first();
+                $paymentMethod = PayoutConfig::where('merchant_id', $merchantId)->where('live_paymentUrl', $findTxnNo->origin_domain)->first();
 
                 if ($findTxnNo->payment_method === 'auto') {
                     if (Carbon::now() > $findTxnNo->expired_at) {
