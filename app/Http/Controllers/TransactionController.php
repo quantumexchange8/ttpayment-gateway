@@ -644,6 +644,10 @@ class TransactionController extends Controller
                 $findWalletAddress = MerchantWalletAdrress::where('merchant_id', $transaction->merchant_id)->where('wallet_address_id', $findWallet->id)->first();
 
                 if (empty($check)) {
+                    
+                    if ($transaction->status === 'success') {
+                        return redirect()->route('returnTransaction', ['transaction_id' => $transaction->id]);
+                    }
 
                     if ($symbol === "USDT") {
 
