@@ -45,6 +45,11 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
         referer: referer
     });
 
+    const getDefaultTimestamp = () => {
+        const now = Date.now() - 5 * 60 * 1000; // now - 5min
+        return Math.floor(now / 1000) * 1000;   // strip ms (to match Tron)
+    };
+
     useEffect(() => {
         const refreshInterval = merchant.refresh_time * 1000; // Convert to milliseconds
         
@@ -79,9 +84,17 @@ export default function Payment({ merchant, transaction, expirationTime, tokenAd
                 });
                 const result = await response.json();
                 const timestamp = result.block_header.raw_data.timestamp;
-                setBlockTimestamp(timestamp);
+                
+                if (timestamp) {
+                    setBlockTimestamp(timestamp);
+                } else {
+                    console.warn('getnowblock timestamp invalid. Fallback to Date.now()');
+                    setBlockTimestamp(getDefaultTimestamp());
+                }
+
             } catch (error) {
                 console.error('Error fetching block:', error);
+                setBlockTimestamp(getDefaultTimestamp());
             }
         };
 
