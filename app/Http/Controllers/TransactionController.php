@@ -672,7 +672,7 @@ class TransactionController extends Controller
                                 ]);
                             } catch (\Illuminate\Database\QueryException $e) {
                                 Log::info('Duplicate txID: '. $transactionData['txID']);
-                                redirect()->route('returnTransaction', ['transaction_id' => $transaction->id]); 
+                                return redirect()->route('returnTransaction', ['transaction_id' => $transaction->id]); 
                             }
                         } else {
                             $transaction->update([
